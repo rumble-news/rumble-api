@@ -5,6 +5,9 @@
  */
 
 const home = require('../app/controllers/home');
+const articles = require('../app/controllers/article');
+const stormpath = require('express-stormpath')
+
 
 /**
  * Expose
@@ -13,6 +16,17 @@ const home = require('../app/controllers/home');
 module.exports = function (app, passport) {
 
   app.get('/', home.index);
+
+  // article routes
+  app.param('id', articles.load);
+  app.get('/articles', articles.index);
+  app.get('/articles/new', articles.new);
+  app.post('/articles', articles.create);
+  app.get('/articles/:id', articles.show);
+  app.get('/articles/:id/edit', articles.edit);
+  app.put('/articles/:id', articles.update);
+  app.delete('/articles/:id', articles.destroy);
+
 
   /**
    * Error handling

@@ -4,7 +4,7 @@
  */
 
 module.exports = {
-  db: 'mongodb://localhost/your_project_test',
+  db: 'mongodb://localhost/rumble_api_test',
   facebook: {
     clientID: 'APP_ID',
     clientSecret: 'SECRET',
