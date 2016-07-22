@@ -19,7 +19,12 @@ const Schema = mongoose.Schema;
 const ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true },
-  userID: { type : Number },
+  userID: { type : String },
+  comments: [{
+    body: { type : String, default : '' },
+    user: { type : Schema.ObjectId, ref : 'User' },
+    createdAt: { type : Date, default : Date.now }
+  }],
   imageURL: { type : String },
   createdAt: { type : Date, default : Date.now }
 });
@@ -78,8 +83,49 @@ ArticleSchema.methods = {
       self.save(cb);
     }, 'article');
     */
+  },
+    /**
+   * Add comment
+   *
+   * @param {User} user
+   * @param {Object} comment
+   * @api private
+   */
+
+  addComment: function (user, comment) {
+    this.comments.push({
+      body: comment.body,
+      user: user._id
+    });
+
+    if (!this.user.email) this.user.email = 'email@product.com';
+
+    notify.comment({
+      article: this,
+      currentUser: user,
+      comment: comment.body
+    });
+
+    return this.save();
+  },
+
+  /**
+   * Remove comment
+   *
+   * @param {commentId} String
+   * @api private
+   */
+
+  removeComment: function (commentId) {
+    const index = this.comments
+      .map(comment => comment.id)
+      .indexOf(commentId);
+
+    if (~index) this.comments.splice(index, 1);
+    else throw new Error('Comment not found');
+    return this.save();
   }
-},
+};
 
 /**
  * Statics

@@ -7,7 +7,7 @@
 const mongoose = require('mongoose');
 const { wrap: async } = require('co');
 const only = require('only');
-const { respond, respondOrRedirect } = require('../utils');
+const { respond } = require('../utils');
 const Article = mongoose.model('Article');
 const assign = Object.assign;
 
@@ -39,7 +39,7 @@ exports.index = async(function* (req, res) {
   const articles = yield Article.list(options);
   const count = yield Article.count();
 
-  respond(res, 'articles/index', {
+  respond(res, {
     title: 'Articles',
     articles: articles,
     page: page + 1,
@@ -73,7 +73,7 @@ exports.create = async(function* (req, res) {
       article
     })
   } catch (err) {
-    respond(res, 'articles/new', {
+    respond(res, {
       title: article.title || 'New Article',
       errors: [err.toString()],
       article
@@ -86,7 +86,7 @@ exports.create = async(function* (req, res) {
  */
 
 exports.edit = function (req, res) {
-  res.render('articles/edit', {
+  respond(res, {
     title: 'Edit ' + req.article.title,
     article: req.article
   });
@@ -101,9 +101,9 @@ exports.update = async(function* (req, res){
   assign(article, only(req.body, 'title body tags'));
   try {
     yield article.uploadAndSave(req.file);
-    respond(res, `/articles/${article._id}`, article);
+    respond(res, article);
   } catch (err) {
-    respond(res, 'articles/edit', {
+    respond(res, {
       title: 'Edit ' + article.title,
       errors: [err.toString()],
       article
@@ -116,7 +116,7 @@ exports.update = async(function* (req, res){
  */
 
 exports.show = function (req, res){
-  respond(res, 'articles/show', {
+  respond(res, {
     title: req.article.title,
     article: req.article
   });
@@ -128,7 +128,7 @@ exports.show = function (req, res){
 
 exports.destroy = async(function* (req, res) {
   yield req.article.remove();
-  respond({ req, res }, '/articles', {
+  respond({ req, res }, {
     type: 'info',
     text: 'Deleted successfully'
   }, 200);

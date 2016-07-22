@@ -11,6 +11,7 @@ var cookieParser = require('cookie-parser');
 var cookieSession = require('cookie-session');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
+var pathfinderUI = require('pathfinder-ui')
 // var csrf = require('csurf');
 
 var mongoStore = require('connect-mongo')(session);
@@ -79,6 +80,13 @@ module.exports = function (app, passport) {
       return method;
     }
   }));
+
+  app.use('/pathfinder', function(req, res, next){
+    pathfinderUI(app)
+    next()
+  }, pathfinderUI.router)
+
+
 
   // cookieParser should be above session
   // app.use(cookieParser());
