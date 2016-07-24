@@ -4,7 +4,7 @@
  */
 
 module.exports = {
-  db: 'mongodb://localhost/rumble_api_production',
+  db: process.env.MONGODB_URI,
   facebook: {
     clientID: 'APP_ID',
     clientSecret: 'SECRET',
