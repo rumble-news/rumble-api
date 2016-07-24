@@ -28,7 +28,7 @@ var env = process.env.NODE_ENV || 'development';
  * Expose
  */
 
-module.exports = function (app, passport) {
+module.exports = function (app) {
 
   // Compression middleware (should be placed before express.static)
   app.use(compression({

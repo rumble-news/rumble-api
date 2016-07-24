@@ -5,6 +5,7 @@
  */
 
 const home = require('../app/controllers/home');
+const users = require('../app/controllers/users');
 const articles = require('../app/controllers/articles');
 const comments = require('../app/controllers/comments');
 const stormpath = require('express-stormpath')
@@ -15,13 +16,20 @@ const stormpath = require('express-stormpath')
  * Expose
  */
 
-module.exports = function (app, passport) {
+module.exports = function (app) {
 
   app.get('/', home.index);
 
+  // user routes
+  app.get('/users/current', stormpath.apiAuthenticationRequired, users.show)
+  app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
+  app.put('/users/current', stormpath.apiAuthenticationRequired, users.update)
+
+
+
   // article routes
   app.param('id', articles.load);
-  app.get('/articles', articles.index);
+  app.get('/articles', stormpath.apiAuthenticationRequired, articles.index);
   // app.get('/articles/new', articles.new);
   app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
   app.get('/articles/:id', stormpath.apiAuthenticationRequired, articles.show);

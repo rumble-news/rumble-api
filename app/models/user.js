@@ -1,54 +1,15 @@
 
-/*!
- * Module dependencies
- */
+// const promisify = require("promisify-node");
+// const Promise = require("bluebird");
 
-var mongoose = require('mongoose');
-var userPlugin = require('mongoose-user');
-var Schema = mongoose.Schema;
-
-/**
- * User schema
- */
-
-var UserSchema = new Schema({
-  name: { type: String, default: '' },
-  email: { type: String, default: '' },
-  hashed_password: { type: String, default: '' },
-  salt: { type: String, default: '' }
-});
-
-/**
- * User plugin
- */
-
-UserSchema.plugin(userPlugin, {});
-
-/**
- * Add your
- * - pre-save hooks
- * - validations
- * - virtuals
- */
-
-/**
- * Methods
- */
-
-UserSchema.method({
-
-});
-
-/**
- * Statics
- */
-
-UserSchema.static({
-
-});
-
-/**
- * Register
- */
-
-mongoose.model('User', UserSchema);
+exports.findUserByHref = function(href, client) {
+  // Promise.promisify(client.getAccount);
+  client.getAccount(href).then(function(account) {
+    console.log(account);
+    if (err != "undefined" && err != null) {
+      return account
+    } else {
+      return 'unknown'
+    }
+  });
+};

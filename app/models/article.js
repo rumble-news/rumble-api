@@ -18,8 +18,8 @@ const Schema = mongoose.Schema;
 
 const ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
-  url: { type : String, default : '', trim : true },
-  userID: { type : String },
+  url: { type : String, default : '', trim : true, required: true},
+  userHref: { type : String, required: true },
   comments: [{
     body: { type : String, default : '' },
     user: { type : Schema.ObjectId, ref : 'User' },

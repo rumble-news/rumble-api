@@ -10,6 +10,7 @@ const only = require('only');
 const { respond } = require('../utils');
 const Article = mongoose.model('Article');
 const assign = Object.assign;
+const userModel = require('../models/user')
 
 /**
  * Load
@@ -29,6 +30,7 @@ exports.load = async(function* (req, res, next, id) {
  */
 
 exports.index = async(function* (req, res) {
+  console.log(req.user.username)
   const page = (req.query.page > 0 ? req.query.page : 1) - 1;
   const limit = 30;
   const options = {
@@ -66,7 +68,7 @@ exports.new = function (req, res){
 exports.create = async(function* (req, res) {
   console.log(req.body)
   const article = new Article(only(req.body, 'title url imageURL'));
-  article.user = req.user;
+  article.userHref = req.user.href;
   try {
     yield article.uploadAndSave();
     res.status(200).send({
@@ -98,7 +100,7 @@ exports.edit = function (req, res) {
 
 exports.update = async(function* (req, res){
   const article = req.article;
-  assign(article, only(req.body, 'title body tags'));
+  assign(article, only(req.body, 'title url imageURL'));
   try {
     yield article.uploadAndSave(req.file);
     respond(res, article);
@@ -116,10 +118,24 @@ exports.update = async(function* (req, res){
  */
 
 exports.show = function (req, res){
-  respond(res, {
-    title: req.article.title,
-    article: req.article
+  var client = req.app.get('stormpathClient');
+  client.getAccount(req.user.href, function(err, account) {
+    console.log(account);
+    if (err) {
+      respond(res, {
+        title: req.article.title,
+        article: req.article,
+        user: 'unknown'
+      });
+    } else {
+      respond(res, {
+        title: req.article.title,
+        article: req.article,
+        user: account
+      });
+    }
   });
+
 };
 
 /**
