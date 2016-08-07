@@ -5,6 +5,9 @@
  */
 
 const mongoose = require('mongoose');
+const stream = require('getstream-node');
+const FeedManager = stream.FeedManager;
+const StreamMongoose = stream.mongoose;
 
 // const Imager = require('imager');
 // const config = require('../../config');
@@ -16,10 +19,11 @@ const Schema = mongoose.Schema;
  * Article Schema
  */
 
-const ArticleSchema = new Schema({
+var ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true, required: true},
   userHref: { type : String, required: true },
+  username: {type : String, required: true},
   comments: [{
     body: { type : String, default : '' },
     user: { type : Schema.ObjectId, ref : 'User' },
@@ -28,6 +32,27 @@ const ArticleSchema = new Schema({
   imageURL: { type : String },
   createdAt: { type : Date, default : Date.now }
 });
+
+/**
+ * GetStream Integration
+ */
+
+ArticleSchema.methods.createActivity = function() {
+      var activity = {};
+      var extra_data = this.activityExtraData();
+      for (var key in extra_data) {
+          activity[key] = extra_data[key];
+      }
+      activity.to = (this.activityNotify() || []).map(function(x){return x.id});
+      activity.actor = this.activityActor();
+      activity.verb = this.activityVerb();
+      activity.object = this.activityObject();
+      activity.foreign_id = this.activityForeignId();
+      if (this.activityTime()) {
+          activity.time = this.activityTime();
+      }
+      return activity;
+  }
 
 /**
  * Validations
@@ -67,6 +92,7 @@ ArticleSchema.methods = {
 
   uploadAndSave: function () {
     console.log(this)
+    debugger;
     const err = this.validateSync();
     if (err && err.toString()) throw new Error(err.toString());
     return this.save();
@@ -164,4 +190,18 @@ ArticleSchema.statics = {
   }
 };
 
+ArticleSchema.plugin(StreamMongoose.activity);
+console.log("Plugged in");
+console.log(ArticleSchema);
+
+ArticleSchema.methods.activityActorProp = function() {
+ return 'user';
+}
+
+// ArticleSchema.methods.activityForeignId = function() {
+//   return this.username + ':' + this.item._id;
+// };
+
 mongoose.model('Article', ArticleSchema);
+
+stream.mongoose.setupMongoose(mongoose);

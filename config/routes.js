@@ -25,6 +25,9 @@ module.exports = function (app) {
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
   app.put('/users/current', stormpath.apiAuthenticationRequired, users.update)
 
+  // Feed
+  app.get('/feed', stormpath.apiAuthenticationRequired, users.feed)
+
 
 
   // article routes

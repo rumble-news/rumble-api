@@ -65,12 +65,18 @@ exports.new = function (req, res){
  * Upload an image
  */
 
-exports.create = async(function* (req, res) {
+exports.create = function (req, res) {
   console.log(req.body)
   const article = new Article(only(req.body, 'title url imageURL'));
   article.userHref = req.user.href;
+  article.username = req.user.username;
+  const userId = req.user.href.split('/').pop()
+  article.user = 'user:' + userId;
+  // console.log(Article);
+  // activity = article.createActivity();
+  // console.log(activity);
   try {
-    yield article.uploadAndSave();
+    article.uploadAndSave();
     res.status(200).send({
       article
     })
@@ -81,7 +87,7 @@ exports.create = async(function* (req, res) {
       article
     }, 422);
   }
-});
+};
 
 /**
  * Edit an article
