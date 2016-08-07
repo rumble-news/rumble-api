@@ -22,8 +22,7 @@ const Schema = mongoose.Schema;
 var ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true, required: true},
-  userHref: { type : String, required: true },
-  username: {type : String, required: true},
+  user: { type : Schema.ObjectId, ref : 'User' },
   comments: [{
     body: { type : String, default : '' },
     user: { type : Schema.ObjectId, ref : 'User' },
@@ -191,12 +190,10 @@ ArticleSchema.statics = {
 };
 
 ArticleSchema.plugin(StreamMongoose.activity);
-console.log("Plugged in");
-console.log(ArticleSchema);
 
-ArticleSchema.methods.activityActorProp = function() {
- return 'user';
-}
+// ArticleSchema.methods.activityActorProp = function() {
+//  return 'user';
+// }
 
 // ArticleSchema.methods.activityForeignId = function() {
 //   return this.username + ':' + this.item._id;
@@ -204,4 +201,4 @@ ArticleSchema.methods.activityActorProp = function() {
 
 mongoose.model('Article', ArticleSchema);
 
-stream.mongoose.setupMongoose(mongoose);
+// stream.mongoose.setupMongoose(mongoose);

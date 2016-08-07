@@ -68,6 +68,6 @@ function connect () {
   var options = { server: { socketOptions: { keepAlive: 1 } } };
   var connection = mongoose.connect(config.db, options).connection;
   // Register mongoose connection with Stream
-  // stream.mongoose.setupMongoose(mongoose);
+  stream.mongoose.setupMongoose(mongoose);
   return connection;
 }

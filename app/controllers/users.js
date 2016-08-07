@@ -3,6 +3,9 @@ const stream = require('getstream-node');
 const FeedManager = stream.FeedManager;
 const StreamMongoose = stream.mongoose;
 const StreamBackend = new StreamMongoose.Backend();
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+
 
 /**
  * Module dependencies.
@@ -97,21 +100,41 @@ exports.show = function (req, res){
  */
 
 exports.feed = function (req, res){
-  console.log(req.user.href)
-  var flatFeed = stream.FeedManager.getUserFeed('6ciPt47eE4B9ECCQK1wOdI');
-  flatFeed.get({})
-        .then(function (body) {
-            console.log(body);
-            var activities = body.results;
-            return StreamBackend.enrichActivities(activities);
-        })
-        .then(function (enrichedActivities) {
-            console.log(enrichedActivities);
-            respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
-        })
-        .catch(function (err) {
-          console.log(err);
-        });
+  var promise = User.findOne({href: req.user.href});
+  promise.then(function(user) {
+    var flatFeed = stream.FeedManager.getUserFeed(user._id);
+    flatFeed.get({})
+          .then(function (body) {
+              console.log(body);
+              var activities = body.results;
+              return StreamBackend.enrichActivities(activities);
+          })
+          .then(function (enrichedActivities) {
+              console.log(enrichedActivities);
+              respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
+          })
+          .catch(function (err) {
+            console.log(err);
+          });
+  })
+  .catch(function(err){
+    // just need one of these
+    console.log('error:', err);
+  });
+  // var flatFeed = stream.FeedManager.getUserFeed('6ciPt47eE4B9ECCQK1wOdI');
+  // flatFeed.get({})
+  //       .then(function (body) {
+  //           console.log(body);
+  //           var activities = body.results;
+  //           return StreamBackend.enrichActivities(activities);
+  //       })
+  //       .then(function (enrichedActivities) {
+  //           console.log(enrichedActivities);
+  //           respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
+  //       })
+  //       .catch(function (err) {
+  //         console.log(err);
+  //       });
 };
 
 /**

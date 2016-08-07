@@ -9,6 +9,7 @@ const { wrap: async } = require('co');
 const only = require('only');
 const { respond } = require('../utils');
 const Article = mongoose.model('Article');
+const User = mongoose.model('User');
 const assign = Object.assign;
 const userModel = require('../models/user')
 
@@ -67,26 +68,36 @@ exports.new = function (req, res){
 
 exports.create = function (req, res) {
   console.log(req.body)
-  const article = new Article(only(req.body, 'title url imageURL'));
-  article.userHref = req.user.href;
-  article.username = req.user.username;
-  const userId = req.user.href.split('/').pop()
-  article.user = 'user:' + userId;
-  // console.log(Article);
+  var article = new Article(only(req.body, 'title url imageURL'));
+  // const user = User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname})
+  User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
+    if (err) {
+      console.log(err);
+    } else {
+      article.user = user;
+      try {
+        article.uploadAndSave();
+        res.status(200).send({
+          article
+        })
+      } catch (err) {
+        respond(res, {
+          title: article.title || 'New Article',
+          errors: [err.toString()],
+          article
+        }, 422);
+      }
+    }
+    // created will be true here
+    console.log('A new user from "%s" was inserted', user.href);
+  });
+  // article.userHref = req.user.href;
+  // article.username = req.user.username;
+  // const userId = req.user.href.split('/').pop()
+
+  // console.log(article);
   // activity = article.createActivity();
   // console.log(activity);
-  try {
-    article.uploadAndSave();
-    res.status(200).send({
-      article
-    })
-  } catch (err) {
-    respond(res, {
-      title: article.title || 'New Article',
-      errors: [err.toString()],
-      article
-    }, 422);
-  }
 };
 
 /**
