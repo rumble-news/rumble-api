@@ -32,4 +32,8 @@ const UserSchema = new Schema({
 
 UserSchema.plugin(findOrCreate);
 
+// UserSchema.methods.findFromHref = function(req) {
+//   User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
+// };
+
 mongoose.model('User', UserSchema);

@@ -8,6 +8,7 @@ const home = require('../app/controllers/home');
 const users = require('../app/controllers/users');
 const articles = require('../app/controllers/articles');
 const comments = require('../app/controllers/comments');
+const follows = require('../app/controllers/follows');
 const stormpath = require('express-stormpath')
 
 
@@ -24,6 +25,10 @@ module.exports = function (app) {
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.show)
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
   app.put('/users/current', stormpath.apiAuthenticationRequired, users.update)
+
+  // follow
+  app.all('/follow', stormpath.apiAuthenticationRequired, follows.load);
+  app.post('/follow', stormpath.apiAuthenticationRequired, follows.create);
 
   // Feed
   app.get('/feed', stormpath.apiAuthenticationRequired, users.feed)
