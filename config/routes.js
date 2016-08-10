@@ -21,6 +21,9 @@ module.exports = function (app) {
 
   app.get('/', home.index);
 
+  // Find or create user id
+  app.all('/*', stormpath.apiAuthenticationRequired, users.load);
+
   // user routes
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.show)
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
@@ -31,8 +34,9 @@ module.exports = function (app) {
   app.post('/follow', stormpath.apiAuthenticationRequired, follows.create);
 
   // Feed
-  app.get('/feed', stormpath.apiAuthenticationRequired, users.feed)
 
+  app.get('/feed', stormpath.apiAuthenticationRequired, users.feed);
+  app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
 
 
   // article routes

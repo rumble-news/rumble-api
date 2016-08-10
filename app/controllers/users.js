@@ -17,17 +17,33 @@ const { respond } = require('../utils');
 const stormpath = require('express-stormpath')
 const assign = Object.assign;
 
+
 /**
  * Load
  */
-exports.load = async(function* (req, res, next) {
-  try {
-    if (!req.user) return next(new Error('User not found'));
-  } catch (err) {
-    return next(err);
-  }
-  next();
-});
+exports.load = function (req, res, next) {
+  User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
+    if (err) {
+      console.log(err);
+      next(new Error('User not found'));
+    } else {
+      req.userId = user._id;
+      next();
+    }
+  });
+};
+
+/**
+ * Load
+ */
+// exports.load = async(function* (req, res, next) {
+//   try {
+//     if (!req.user) return next(new Error('User not found'));
+//   } catch (err) {
+//     return next(err);
+//   }
+//   next();
+// });
 
 /**
  * List
@@ -66,7 +82,7 @@ exports.edit = function (req, res) {
 };
 
 /**
- * Update article
+ * Update user
  */
 
 exports.update = async(function* (req, res){
@@ -121,6 +137,30 @@ exports.feed = function (req, res){
     // just need one of these
     console.log('error:', err);
   });
+};
+
+/******************
+  Aggregated Feed
+******************/
+
+var enrichAggregatedActivities = function (body) {
+    var activities = body.results;
+    return StreamBackend.enrichAggregatedActivities(activities);
+}
+
+exports.timeline_feed = function(req, res) {
+    var aggregatedFeed = FeedManager.getNewsFeeds(req.userId)['timeline'];
+
+    aggregatedFeed.get({})
+        .then(enrichAggregatedActivities)
+        .then(function(enrichedActivities) {
+            respond(res, {location: 'aggregated_feed', user: req.user, activities: enrichedActivities, path: req.url});
+        })
+        .catch(function (err) {
+          console.log(err);
+          respond(res, err, 500);
+        });
+};
   // var flatFeed = stream.FeedManager.getUserFeed('6ciPt47eE4B9ECCQK1wOdI');
   // flatFeed.get({})
   //       .then(function (body) {
@@ -135,7 +175,6 @@ exports.feed = function (req, res){
   //       .catch(function (err) {
   //         console.log(err);
   //       });
-};
 
 /**
  * Delete an article

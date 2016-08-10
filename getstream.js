@@ -41,7 +41,7 @@ exports.config = {
     /**
     * GetStream.io Flat Feed slug
     */
-    flat: "flat",
+    flat: "user",
 
     /**
     * GetStream.io Aggregated Feed slug
