@@ -7,7 +7,7 @@
 const home = require('../app/controllers/home');
 const users = require('../app/controllers/users');
 const articles = require('../app/controllers/articles');
-const comments = require('../app/controllers/comments');
+const posts = require('../app/controllers/posts');
 const follows = require('../app/controllers/follows');
 const stormpath = require('express-stormpath')
 
@@ -38,7 +38,6 @@ module.exports = function (app) {
   app.get('/feed', stormpath.apiAuthenticationRequired, users.feed);
   app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
 
-
   // article routes
   app.param('id', articles.load);
   app.get('/articles', stormpath.apiAuthenticationRequired, articles.index);
@@ -49,11 +48,13 @@ module.exports = function (app) {
   app.put('/articles/:id', stormpath.apiAuthenticationRequired, articles.update);
   app.delete('/articles/:id', stormpath.apiAuthenticationRequired, articles.destroy);
 
-  // comment routes
-  app.param('commentId', comments.load);
-  app.post('/articles/:id/comments', comments.create);
-  // app.get('/articles/:id/comments', comments.create);
-  app.delete('/articles/:id/comments/:commentId', comments.destroy);
+  // post routes
+  app.param('id', posts.load);
+  app.post('/posts', stormpath.apiAuthenticationRequired, posts.getArticle);
+  app.post('/posts', stormpath.apiAuthenticationRequired, posts.create);
+  app.get('/posts/:id', stormpath.apiAuthenticationRequired, posts.show);
+  app.put('/posts/:id', stormpath.apiAuthenticationRequired, posts.update);
+  app.delete('/posts/:id', stormpath.apiAuthenticationRequired, posts.destroy);
 
 
   /**

@@ -27,7 +27,7 @@ exports.load = function (req, res, next) {
       console.log(err);
       next(new Error('User not found'));
     } else {
-      req.userId = user._id;
+      req.mongooseUser = user;
       next();
     }
   });
@@ -116,27 +116,20 @@ exports.show = function (req, res){
  */
 
 exports.feed = function (req, res){
-  var promise = User.findOne({href: req.user.href});
-  promise.then(function(user) {
-    var flatFeed = stream.FeedManager.getUserFeed(user._id);
-    flatFeed.get({})
-          .then(function (body) {
-              console.log(body);
-              var activities = body.results;
-              return StreamBackend.enrichActivities(activities);
-          })
-          .then(function (enrichedActivities) {
-              console.log(enrichedActivities);
-              respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
-          })
-          .catch(function (err) {
-            console.log(err);
-          });
-  })
-  .catch(function(err){
-    // just need one of these
-    console.log('error:', err);
-  });
+  var flatFeed = stream.FeedManager.getUserFeed(req.mongooseUser._id);
+  flatFeed.get({})
+        .then(function (body) {
+            console.log(body);
+            var activities = body.results;
+            return StreamBackend.enrichActivities(activities);
+        })
+        .then(function (enrichedActivities) {
+            console.log(enrichedActivities);
+            respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
 };
 
 /******************
@@ -149,7 +142,7 @@ var enrichAggregatedActivities = function (body) {
 }
 
 exports.timeline_feed = function(req, res) {
-    var aggregatedFeed = FeedManager.getNewsFeeds(req.userId)['timeline'];
+    var aggregatedFeed = FeedManager.getNewsFeeds(req.mongooseUser._id)['timeline'];
 
     aggregatedFeed.get({})
         .then(enrichAggregatedActivities)

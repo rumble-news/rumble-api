@@ -22,36 +22,11 @@ const Schema = mongoose.Schema;
 var ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true, required: true},
-  user: { type : Schema.ObjectId, ref : 'User' },
-  comments: [{
-    body: { type : String, default : '' },
-    user: { type : Schema.ObjectId, ref : 'User' },
-    createdAt: { type : Date, default : Date.now }
-  }],
-  imageURL: { type : String },
+  thumbnail: { type : String,  default : ''},
+  description: { type : String,  default : ''},
   createdAt: { type : Date, default : Date.now }
 });
 
-/**
- * GetStream Integration
- */
-
-ArticleSchema.methods.createActivity = function() {
-      var activity = {};
-      var extra_data = this.activityExtraData();
-      for (var key in extra_data) {
-          activity[key] = extra_data[key];
-      }
-      activity.to = (this.activityNotify() || []).map(function(x){return x.id});
-      activity.actor = this.activityActor();
-      activity.verb = this.activityVerb();
-      activity.object = this.activityObject();
-      activity.foreign_id = this.activityForeignId();
-      if (this.activityTime()) {
-          activity.time = this.activityTime();
-      }
-      return activity;
-  }
 
 /**
  * Validations
@@ -90,8 +65,6 @@ ArticleSchema.methods = {
    */
 
   uploadAndSave: function () {
-    console.log(this)
-    debugger;
     const err = this.validateSync();
     if (err && err.toString()) throw new Error(err.toString());
     return this.save();
@@ -108,47 +81,6 @@ ArticleSchema.methods = {
       self.save(cb);
     }, 'article');
     */
-  },
-    /**
-   * Add comment
-   *
-   * @param {User} user
-   * @param {Object} comment
-   * @api private
-   */
-
-  addComment: function (user, comment) {
-    this.comments.push({
-      body: comment.body,
-      user: user._id
-    });
-
-    if (!this.user.email) this.user.email = 'email@product.com';
-
-    notify.comment({
-      article: this,
-      currentUser: user,
-      comment: comment.body
-    });
-
-    return this.save();
-  },
-
-  /**
-   * Remove comment
-   *
-   * @param {commentId} String
-   * @api private
-   */
-
-  removeComment: function (commentId) {
-    const index = this.comments
-      .map(comment => comment.id)
-      .indexOf(commentId);
-
-    if (~index) this.comments.splice(index, 1);
-    else throw new Error('Comment not found');
-    return this.save();
   }
 };
 
@@ -166,6 +98,7 @@ ArticleSchema.statics = {
    */
 
   load: function (_id) {
+    console.log("Loading article");
     return this.findOne({ _id })
       .exec();
   },
@@ -189,7 +122,7 @@ ArticleSchema.statics = {
   }
 };
 
-ArticleSchema.plugin(StreamMongoose.activity);
+// ArticleSchema.plugin(StreamMongoose.activity);
 
 // ArticleSchema.methods.activityActorProp = function() {
 //  return 'user';
