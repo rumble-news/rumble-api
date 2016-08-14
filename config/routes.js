@@ -39,22 +39,23 @@ module.exports = function (app) {
   app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
 
   // article routes
-  app.param('id', articles.load);
+  app.param('articleId', articles.load);
   app.get('/articles', stormpath.apiAuthenticationRequired, articles.index);
   // app.get('/articles/new', articles.new);
   app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
-  app.get('/articles/:id', stormpath.apiAuthenticationRequired, articles.show);
+  app.get('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.show);
   // app.get('/articles/:id/edit', articles.edit);
-  app.put('/articles/:id', stormpath.apiAuthenticationRequired, articles.update);
-  app.delete('/articles/:id', stormpath.apiAuthenticationRequired, articles.destroy);
+  app.put('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.update);
+  app.delete('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.destroy);
 
   // post routes
-  app.param('id', posts.load);
+  app.param('postId', posts.load);
   app.post('/posts', stormpath.apiAuthenticationRequired, posts.getArticle);
   app.post('/posts', stormpath.apiAuthenticationRequired, posts.create);
-  app.get('/posts/:id', stormpath.apiAuthenticationRequired, posts.show);
-  app.put('/posts/:id', stormpath.apiAuthenticationRequired, posts.update);
-  app.delete('/posts/:id', stormpath.apiAuthenticationRequired, posts.destroy);
+  app.get('/posts/:postId', stormpath.apiAuthenticationRequired, posts.show);
+  app.put('/posts/:postId', stormpath.apiAuthenticationRequired, posts.update);
+  app.get('/posts/:postId/parents', posts.getParents);
+  app.delete('/posts/:postId', stormpath.apiAuthenticationRequired, posts.destroy);
 
 
   /**

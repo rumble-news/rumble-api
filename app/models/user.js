@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Follow = mongoose.model('Follow');
 const findOrCreate = require('mongoose-findorcreate')
 
 
@@ -13,6 +14,19 @@ const UserSchema = new Schema({
   surname: { type: String, default: '' }
 });
 
+UserSchema.methods = {
+
+  /**
+   * Get followers
+   *
+   * @param {Object} images
+   * @api private
+   */
+
+  getFollowers: function () {
+    return Follow.find({target: this._id}).populate('user').execPopulate();
+  }
+};
 
 
 // const promisify = require("promisify-node");

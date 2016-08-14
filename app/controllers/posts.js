@@ -94,7 +94,7 @@ exports.getArticle = function (req, res, next) {
   }
 };
 
-exports.create = function(req, res) {
+exports.create = async(function* (req, res) {
   console.log("Article is:");
   console.log(req.article);
   var post = new Post(only(req.body, 'caption'));
@@ -103,7 +103,8 @@ exports.create = function(req, res) {
   // if (typeof req.body.caption !== "undefined" && req.body.caption !== null) post.caption = req.body.caption;
   // assign(post, only(req.body, 'caption'));
   try {
-    post.uploadAndSave();
+    post.parents = yield Post.getParents(post.user, post.article);
+    yield post.uploadAndSave();
     res.status(200).send({
       post
     })
@@ -114,7 +115,7 @@ exports.create = function(req, res) {
       post
     }, 422);
   }
-};
+});
 
 /**
  * Edit an post
@@ -159,24 +160,10 @@ exports.update = async(function* (req, res){
  */
 //TODO: Fix this function
 exports.show = function (req, res){
-  var client = req.app.get('stormpathClient');
-  client.getAccount(req.user.href, function(err, account) {
-    console.log(account);
-    if (err) {
-      respond(res, {
-        title: req.post.title,
-        post: req.post,
-        user: 'unknown'
-      });
-    } else {
-      respond(res, {
-        title: req.post.title,
-        post: req.post,
-        user: account
-      });
-    }
+  respond(res, {
+    title: req.post.title,
+    post: req.post
   });
-
 };
 
 /**
@@ -190,3 +177,16 @@ exports.destroy = async(function* (req, res) {
     text: 'Deleted successfully'
   }, 200);
 });
+
+exports.getParents = function(req, res) {
+  Post.getParents(req.post.user, req.post.article)
+    .then(function(parents) {
+      console.log(parents);
+    })
+    .catch(function(err) {
+      console.log(err);
+    });
+  respond(res, {
+    parents: "none"
+  }, 200);
+};
