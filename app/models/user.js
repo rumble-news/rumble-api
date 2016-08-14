@@ -11,7 +11,9 @@ const findOrCreate = require('mongoose-findorcreate')
 const UserSchema = new Schema({
   href: { type: String, default: '' },
   givenName: { type: String, default: '' },
-  surname: { type: String, default: '' }
+  surname: { type: String, default: '' },
+  rumbleScore: {type: Number, default: 0},
+  scoreHistory: {type: [], default: []}
 });
 
 UserSchema.methods = {
@@ -25,6 +27,13 @@ UserSchema.methods = {
 
   getFollowers: function () {
     return Follow.find({target: this._id}).populate('user').execPopulate();
+  },
+
+  incrementRumbleScore: function(event, amount = 1) {
+    console.log("Incrementing rumble score for user " + this.givenName + " " + this.surname);
+    this.rumbleScore += amount;
+    this.scoreHistory.push({event, amount});
+    return this.save();
   }
 };
 

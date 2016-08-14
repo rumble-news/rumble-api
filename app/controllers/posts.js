@@ -104,6 +104,12 @@ exports.create = async(function* (req, res) {
   // assign(post, only(req.body, 'caption'));
   try {
     post.parents = yield Post.getParents(post.user, post.article);
+    // yield post.adjustRumbleScores(req.user.fullName);
+    yield post.parents.map(function(userId) {
+      return User.findById(userId).then(function(user) {
+        return user.incrementRumbleScore(req.user.fullName + " rumbled your post.")
+      });
+    });
     yield post.uploadAndSave();
     res.status(200).send({
       post
