@@ -37,6 +37,7 @@ module.exports = function (app) {
 
   app.get('/feed', stormpath.apiAuthenticationRequired, users.feed);
   app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
+  app.get('/notifications', stormpath.apiAuthenticationRequired, users.notification_feed);
 
   // article routes
   app.param('articleId', articles.load);
@@ -54,7 +55,6 @@ module.exports = function (app) {
   app.post('/posts', stormpath.apiAuthenticationRequired, posts.create);
   app.get('/posts/:postId', stormpath.apiAuthenticationRequired, posts.show);
   app.put('/posts/:postId', stormpath.apiAuthenticationRequired, posts.update);
-  app.get('/posts/:postId/parents', posts.getParents);
   app.delete('/posts/:postId', stormpath.apiAuthenticationRequired, posts.destroy);
 
 

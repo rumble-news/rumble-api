@@ -11,7 +11,6 @@ const { respond } = require('../utils');
 const Article = mongoose.model('Article');
 const User = mongoose.model('User');
 const assign = Object.assign;
-const userModel = require('../models/user')
 
 /**
  * Load

@@ -8,6 +8,11 @@ const mongoose = require('mongoose');
 const stream = require('getstream-node');
 const FeedManager = stream.FeedManager;
 const StreamMongoose = stream.mongoose;
+const promisify = require("promisify-node");
+const embedly = require('embedly');
+const util = require('util');
+const config = require('../../config');
+const only = require('only');
 
 // const Imager = require('imager');
 // const config = require('../../config');
@@ -21,10 +26,15 @@ const Schema = mongoose.Schema;
 
 var ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
+  author_name: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true, required: true},
-  thumbnail: { type : String,  default : ''},
+  provider_url: { type : String, default : '', trim : true, required: true},
+  thumbnail_url: { type : String,  default : ''},
+  thumbnail_with: {type: Number},
+  thumbnail_height: {type: Number},
   description: { type : String,  default : ''},
-  createdAt: { type : Date, default : Date.now }
+  createdAt: { type : Date, default : Date.now },
+  provider_name: {type : String, detault: ''}
 });
 
 
@@ -68,19 +78,6 @@ ArticleSchema.methods = {
     const err = this.validateSync();
     if (err && err.toString()) throw new Error(err.toString());
     return this.save();
-
-    /*
-    if (images && !images.length) return this.save();
-    const imager = new Imager(imagerConfig, 'S3');
-
-    imager.upload(images, function (err, cdnUri, files) {
-      if (err) return cb(err);
-      if (files.length) {
-        self.image = { cdnUri : cdnUri, files : files };
-      }
-      self.save(cb);
-    }, 'article');
-    */
   }
 };
 
@@ -119,6 +116,35 @@ ArticleSchema.statics = {
       .limit(limit)
       .skip(limit * page)
       .exec();
+  },
+
+  parseArticle: function(url) {
+    const api = new embedly({key: config.embedly.apiKey});
+    console.log(url);
+    return new Promise(function(resolve, reject) {
+      api.oembed({url: url}, function(err, objs) {
+        if (!!err) {
+          console.log("Article parse error.");
+          console.log(err);
+          return reject(err);
+        } else {
+          console.log("Article parse success!");
+          console.log(objs[0]);
+          if (objs[0].type == 'error') return reject(objs[0].error_message);
+          resolve(objs);
+        }
+      });
+    });
+    // api.oembed({url: this.url}, function(err, objs) {
+    // if (!!err) {
+    //   console.error('request #1 failed');
+    //   console.error(err.stack, objs);
+    //   return;
+    // }
+    // console.log('---------------------------------------------------------');
+    // console.log('1. ');
+    // console.log(util.inspect(objs[0]));
+  // });
   }
 };
 

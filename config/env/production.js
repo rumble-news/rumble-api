@@ -5,6 +5,14 @@
 
 module.exports = {
   db: process.env.MONGODB_URI,
+  stream: {
+    apiKey: process.env.STREAM_API_KEY,
+    apiSecret: process.env.STREAM_API_SECRET,
+    appId: '14328'
+  },
+  embedly: {
+    apiKey: process.env.EMBEDLY_API_KEY
+  },
   facebook: {
     clientID: 'APP_ID',
     clientSecret: 'SECRET',

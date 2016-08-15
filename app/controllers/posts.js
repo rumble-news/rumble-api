@@ -65,20 +65,19 @@ exports.new = function (req, res){
  * Create a post
  */
 
-exports.getArticle = function (req, res, next) {
+exports.getArticle = async(function* (req, res, next) {
   console.log(req.body)
   // var article;
-  if (typeof req.body.article !== "undefined" && req.body.article !== null) {
-    var article = new Article(only(req.body.article, 'title url imageURL'));
+  if (typeof req.body.articleUrl !== "undefined" && req.body.articleUrl !== null) {
     try {
-      article.uploadAndSave();
+      var objs = yield Article.parseArticle(req.body.articleUrl);
+      var article = new Article(objs[0]);
+      yield article.uploadAndSave();
       req.article = article;
       next();
     } catch (err) {
       respond(res, {
-        title: post.title || 'New Post',
-        errors: [err.toString()],
-        post
+        errors: [err.toString()]
       }, 500);
     }
   } else if (typeof req.body.articleId !== "undefined" && req.body.articleId !== null)  {
@@ -91,8 +90,11 @@ exports.getArticle = function (req, res, next) {
       var errorString = 'Could not find article ' + req.body.articleId;
       respond(res, {error: errorString}, 422);
     });
+  } else {
+    var errorString = 'Must provide either articleUrl or articleId'
+    respond(res, {error: errorString}, 422);
   }
-};
+});
 
 exports.create = async(function* (req, res) {
   console.log("Article is:");
@@ -141,21 +143,24 @@ exports.edit = function (req, res) {
 exports.update = async(function* (req, res){
   // Can only update caption
   const post = req.post;
-  if (post.user != req.mongooseUser) {
+  console.log(req.mongooseUser);
+  console.log(post.user);
+  if (post.user.equals(req.mongooseUser._id)) {
+    assign(post, only(req.body, 'caption'));
+    try {
+      yield post.uploadAndSave(req.file);
+      respond(res, post);
+    } catch (err) {
+      respond(res, {
+        title: 'Edit post',
+        errors: [err.toString()],
+        post
+      }, 422);
+    }
+  } else {
     respond(res, {
       title: 'Edit ' + post.title,
       errors: ['Cannot update another user\'s post'],
-      post
-    }, 422);
-  }
-  assign(post, only(req.body, 'caption'));
-  try {
-    yield post.uploadAndSave(req.file);
-    respond(res, post);
-  } catch (err) {
-    respond(res, {
-      title: 'Edit ' + post.title,
-      errors: [err.toString()],
       post
     }, 422);
   }
@@ -176,23 +181,38 @@ exports.show = function (req, res){
  * Delete an post
  */
 
-exports.destroy = async(function* (req, res) {
-  yield req.post.remove();
-  respond({ req, res }, {
-    type: 'info',
-    text: 'Deleted successfully'
-  }, 200);
-});
-
-exports.getParents = function(req, res) {
-  Post.getParents(req.post.user, req.post.article)
-    .then(function(parents) {
-      console.log(parents);
-    })
-    .catch(function(err) {
-      console.log(err);
-    });
-  respond(res, {
-    parents: "none"
-  }, 200);
+exports.destroy = function (req, res) {
+  if (req.post.user.equals(req.mongooseUser._id)) {
+    try {
+      req.post.remove();
+      respond(res, {
+        type: 'info',
+        text: 'Deleted successfully'
+      }, 200);
+    } catch (err) {
+      respond(res, {
+        title: 'Edit post',
+        errors: [err.toString()],
+        post
+      }, 422);
+    }
+  } else {
+    respond(res, {
+      errors: ['Cannot update another user\'s post'],
+      post
+    }, 422);
+  }
 };
+
+// exports.getParents = function(req, res) {
+//   Post.getParents(req.post.user, req.post.article)
+//     .then(function(parents) {
+//       console.log(parents);
+//     })
+//     .catch(function(err) {
+//       console.log(err);
+//     });
+//   respond(res, {
+//     parents: "none"
+//   }, 200);
+// };

@@ -143,8 +143,8 @@ var enrichAggregatedActivities = function (body) {
 
 exports.timeline_feed = function(req, res) {
     var aggregatedFeed = FeedManager.getNewsFeeds(req.mongooseUser._id)['timeline'];
-
-    aggregatedFeed.get({})
+    var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
+    aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
         .then(enrichAggregatedActivities)
         .then(function(enrichedActivities) {
             respond(res, {location: 'aggregated_feed', user: req.user, activities: enrichedActivities, path: req.url});
@@ -154,29 +154,21 @@ exports.timeline_feed = function(req, res) {
           respond(res, err, 500);
         });
 };
-  // var flatFeed = stream.FeedManager.getUserFeed('6ciPt47eE4B9ECCQK1wOdI');
-  // flatFeed.get({})
-  //       .then(function (body) {
-  //           console.log(body);
-  //           var activities = body.results;
-  //           return StreamBackend.enrichActivities(activities);
-  //       })
-  //       .then(function (enrichedActivities) {
-  //           console.log(enrichedActivities);
-  //           respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
-  //       })
-  //       .catch(function (err) {
-  //         console.log(err);
-  //       });
 
 /**
- * Delete an article
+ * Notification Feed
  */
 
-// exports.destroy = async(function* (req, res) {
-//   yield req.article.remove();
-//   respond({ req, res }, {
-//     type: 'info',
-//     text: 'Deleted successfully'
-//   }, 200);
-// });
+ exports.notification_feed = function(req, res) {
+     var aggregatedFeed = FeedManager.getNotificationFeed(req.mongooseUser._id);
+     var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
+     aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
+         .then(enrichAggregatedActivities)
+         .then(function(enrichedActivities) {
+             respond(res, {location: 'aggregated_feed', user: req.user, activities: enrichedActivities, path: req.url});
+         })
+         .catch(function (err) {
+           console.log(err);
+           respond(res, err, 500);
+         });
+ };
