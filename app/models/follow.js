@@ -23,6 +23,26 @@ FollowSchema.methods = {
 
 };
 
+FollowSchema.statics = {
+
+  /**
+   * List followers of target
+   */
+
+  list: function (options) {
+    winston.debug("Follow.list query: ", options);
+    const criteria = options.criteria || {};
+    const page = options.page || 0;
+    const limit = options.limit || 30;
+    return this.find(criteria)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(limit * page)
+      .populate(options.populate)
+      .exec();
+  }
+}
+
 FollowSchema.plugin(StreamMongoose.activity);
 
 FollowSchema.methods.activityNotify = function() {

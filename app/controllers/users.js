@@ -173,6 +173,60 @@ exports.unfollow = async(function* (req, res) {
     respond(res, {errors: [err.toString()]}, 500)
   }
 });
+
+/**
+ * Followers
+ */
+ exports.followers = async(function* (req, res) {
+   const page = (req.query.page > 0 ? req.query.page : 1) - 1;
+   const limit = 30;
+   const criteria = {target: req.profile._id}
+   const populate = 'user'
+   const options = {
+     limit: limit,
+     page: page,
+     criteria: criteria,
+     populate: populate
+   };
+
+   const followers = yield Follow.list(options);
+   const count = yield Follow.find(criteria).count();
+
+   respond(res, {
+     followers: followers,
+     page: page + 1,
+     count: count,
+     pages: Math.ceil(count / limit)
+   });
+ });
+
+ /**
+  * Following
+  */
+  //TODO: DRY this up
+  exports.following = async(function* (req, res) {
+    const page = (req.query.page > 0 ? req.query.page : 1) - 1;
+    const limit = 30;
+    const criteria = {user: req.profile._id}
+    const populate = 'target'
+    const options = {
+      limit: limit,
+      page: page,
+      criteria: criteria,
+      populate: populate
+    };
+
+    const following = yield Follow.list(options);
+    const count = yield Follow.find(criteria).count();
+
+    respond(res, {
+      following: following,
+      page: page + 1,
+      count: count,
+      pages: Math.ceil(count / limit)
+    });
+  });
+
 /**
  * Feed
  */
