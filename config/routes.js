@@ -22,16 +22,20 @@ module.exports = function (app) {
   app.get('/', home.index);
 
   // Find or create user id
-  app.all('/*', stormpath.apiAuthenticationRequired, users.load);
+  app.all('/*', stormpath.apiAuthenticationRequired, users.loadCurrentUser);
 
   // user routes
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.show)
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
-  app.put('/users/current', stormpath.apiAuthenticationRequired, users.update)
+  app.get('/users/current', stormpath.apiAuthenticationRequired, users.show);
+  app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit);
+  app.put('/users/current', stormpath.apiAuthenticationRequired, users.update);
+  app.param('userId', users.load);
+  app.put('/users/:userId/follow', stormpath.apiAuthenticationRequired, users.follow);
+  app.put('/users/:userId/unfollow', stormpath.apiAuthenticationRequired, users.unfollow);
+
 
   // follow
-  app.all('/follow', stormpath.apiAuthenticationRequired, follows.load);
-  app.post('/follow', stormpath.apiAuthenticationRequired, follows.create);
+  // app.all('/follow', stormpath.apiAuthenticationRequired, follows.load);
+
 
   // Feed
 

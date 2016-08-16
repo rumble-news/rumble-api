@@ -24,6 +24,9 @@ var pkg = require('../package.json');
 
 var env = process.env.NODE_ENV || 'development';
 
+
+winston.level = config.winston.level;
+
 /**
  * Expose
  */

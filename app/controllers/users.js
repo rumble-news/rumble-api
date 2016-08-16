@@ -5,6 +5,8 @@ const StreamMongoose = stream.mongoose;
 const StreamBackend = new StreamMongoose.Backend();
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
+const Follow = mongoose.model('Follow');
+const winston = require('winston');
 
 
 /**
@@ -19,9 +21,9 @@ const assign = Object.assign;
 
 
 /**
- * Load
+ * Load Current User
  */
-exports.load = function (req, res, next) {
+exports.loadCurrentUser = function (req, res, next) {
   User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
     if (err) {
       console.log(err);
@@ -32,6 +34,19 @@ exports.load = function (req, res, next) {
     }
   });
 };
+
+/**
+ * Load
+ */
+exports.load = async(function* (req, res, next, id) {
+  try {
+    req.profile = yield User.load(id);
+    if (!req.profile) return next(new Error('User not found'));
+  } catch (err) {
+    return next(err);
+  }
+  next();
+});
 
 /**
  * Load
@@ -111,6 +126,53 @@ exports.show = function (req, res){
   });
 };
 
+/**
+ * Follow
+ */
+ exports.follow = async(function* (req, res) {
+   winston.info("Creating follow relationship for %s", req.profile.id);
+   try {
+     var alreadyFollowing = yield req.mongooseUser.isFollowing(req.profile);
+     if (alreadyFollowing) {
+       respond(res, {error: 'User is already following target'}, 422);
+     } else {
+       var follow = new Follow({user: req.mongooseUser._id, target: req.profile._id});
+       winston.debug("Follow created: ", {follow: follow.toString()});
+       yield follow.save();
+       yield req.mongooseUser.incrementFollowing();
+       yield req.profile.incrementFollowers();
+       respond(res, follow);
+     }
+   } catch (err) {
+     winston.error(err);
+     respond(res, {errors: [err.toString()]}, 500)
+   }
+ });
+
+ /**
+  * Unfollow
+  */
+exports.unfollow = async(function* (req, res) {
+  winston.debug("Unfollow ", {user: req.mongooseUser.id, target: req.profile.id});
+  try {
+    var follow = yield Follow.findOne({user: req.mongooseUser, target: req.profile});
+    if (follow) {
+      winston.info("Removing follow: %s", follow.toString());
+      yield follow.remove;
+      yield req.mongooseUser.decrementFollowing();
+      yield req.profile.decrementFollowers();
+      respond(res, {
+        type: 'info',
+        text: 'Unfollowed successfully'
+      }, 200);
+    } else {
+      respond(res, {error: 'User is not following target'}, 422);
+    }
+  } catch (err) {
+    winston.error(err.toString());
+    respond(res, {errors: [err.toString()]}, 500)
+  }
+});
 /**
  * Feed
  */

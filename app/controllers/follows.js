@@ -11,6 +11,7 @@ const { respond } = require('../utils');
 const Follow = mongoose.model('Follow');
 const User = mongoose.model('User');
 const assign = Object.assign;
+const winston = require('winston');
 var promisify = require("promisify-node");
 
 /**
@@ -28,45 +29,51 @@ exports.load = function (req, res, next) {
   });
 };
 
-exports.create = function (req, res) {
-  console.log("Creating follow relationship");
-  console.log(req.body.target);
-  User.findOne({_id: req.body.target}, function(err, target) {
-      console.log(err);
-      console.log(target);
-      if (target) {
-          debugger;
-          var followData = {user: req.userId, target: req.body.target};
-          var follow = new Follow(followData);
-          console.log(followData);
-          follow.save(function(err) {
-              if (err) {
-                console.log(err);
-                respond(res, err, 500);
-              }
-              res.set('Content-Type', 'application/json');
-              return res.send({'follow': {'id': req.body.target}});
-          });
-      } else {
-          res.status(404).send('Not found');
-      }
-  });
-  // User.findOne({_id: req.body.target}, function(err, target) {
-  //     console.log(err);
-  //     console.log(target);
-  //     if (target) {
-  //         var followData = {user: req.user.id, target: req.body.target};
-  //         var follow = new Follow(followData);
-  //         follow.save(function(err) {
-  //             if (err) next(err);
-  //             res.set('Content-Type', 'application/json');
-  //             return res.send({'follow': {'id': req.body.target}});
-  //         });
-  //     } else {
-  //         res.status(404).send('Not found');
-  //     }
-  // });
-};
+exports.create = async(function* (req, res) {
+  winston.info("Creating follow relationship for ", {target: req.body.target});
+  try {
+    var target = yield User.findOne({_id: req.body.target});
+    if (!target) {
+      respond(res, {error: 'Target user not found', target: req.body.target}, 404);
+    }
+    var alreadyFollowing = yield req.mongooseUser.isFollowing(target);
+    if (alreadyFollowing) {
+      respond(res, {error: 'User is already following target'}, 422);
+    } else {
+      var follow = new Follow({user: req.mongooseUser, target: target});
+      yield follow.save();
+      yield req.mongooseUser.incrementFollowing();
+      yield target.incrementFollowers();
+      respond(res, follow);
+    }
+  } catch (err) {
+    winston.error(err.toString());
+    respond(res, {errors: [err.toString()]}, 500)
+  }
+});
+exports.destroy = async(function* (req, res) {
+  winston.info("Destroying follow relationship for ", {target: req.body.target});
+  try {
+    var target = yield User.findOne({_id: req.body.target});
+    if (!target) {
+      respond(res, {error: 'Target user not found', target: req.body.target}, 404);
+    }
+    var follow = yield Follow.findOne({user: req.mongooseUser, target: target});
+    if (follow) {
+      winston.info("Removing %j", follow);
+      yield follow.remove;
+      respond(res, {
+        type: 'info',
+        text: 'Deleted successfully'
+      }, 200);
+    } else {
+      respond(res, {error: 'User is not following target'}, 422);
+    }
+  } catch (err) {
+    winston.error(err.toString());
+    respond(res, {errors: [err.toString()]}, 500)
+  }
+});
 
 // router.delete('/follow', ensureAuthenticated, function(req, res) {
 //     Follow.findOne({user: req.user.id, target: req.body.target}, function(err, follow) {

@@ -191,7 +191,7 @@ exports.destroy = function (req, res) {
       }, 200);
     } catch (err) {
       respond(res, {
-        title: 'Edit post',
+        title: 'Delete post',
         errors: [err.toString()],
         post
       }, 422);

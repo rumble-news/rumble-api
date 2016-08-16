@@ -13,6 +13,9 @@ module.exports = {
   embedly: {
     apiKey: process.env.EMBEDLY_API_KEY
   },
+  winston: {
+    level: 'debug'
+  },
   facebook: {
     clientID: 'APP_ID',
     clientSecret: 'SECRET',

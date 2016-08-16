@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const stream = require('getstream-node');
 const FeedManager = stream.FeedManager;
 const StreamMongoose = stream.mongoose;
+const winston = require('winston');
 
 const Schema = mongoose.Schema;
 
@@ -17,6 +18,10 @@ var FollowSchema = new Schema({
     user: {type: Schema.Types.ObjectId, required: true, ref: 'User'},
     target: {type: Schema.Types.ObjectId, required: true, ref: 'User'},
   });
+
+FollowSchema.methods = {
+
+};
 
 FollowSchema.plugin(StreamMongoose.activity);
 
