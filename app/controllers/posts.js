@@ -12,7 +12,8 @@ const Post = mongoose.model('Post');
 const Article = mongoose.model('Article');
 const User = mongoose.model('User');
 const assign = Object.assign;
-const userModel = require('../models/user')
+const userModel = require('../models/user');
+const winston = require('winston');
 
 /**
  * Load
@@ -66,14 +67,20 @@ exports.new = function (req, res){
  */
 
 exports.getArticle = async(function* (req, res, next) {
-  console.log(req.body)
-  // var article;
   if (typeof req.body.articleUrl !== "undefined" && req.body.articleUrl !== null) {
     try {
-      var objs = yield Article.parseArticle(req.body.articleUrl);
-      var article = new Article(objs[0]);
-      yield article.uploadAndSave();
-      req.article = article;
+      var trimmedUrl = Article.trimUrl(req.body.articleUrl);
+      var existingArticle = yield Article.findOne({url: trimmedUrl});
+      if (existingArticle) {
+        req.article = existingArticle;
+        // next();
+      } else {
+        var objs = yield Article.parseArticle(req.body.articleUrl);
+        var article = new Article(objs[0]);
+        req.article = yield article.uploadAndSave();
+      }
+
+      // req.article = yield Article.findOrCreate(req.body.articleUrl);
       next();
     } catch (err) {
       respond(res, {
@@ -97,8 +104,7 @@ exports.getArticle = async(function* (req, res, next) {
 });
 
 exports.create = async(function* (req, res) {
-  console.log("Article is:");
-  console.log(req.article);
+  winston.debug("Article is: %s", req.article.toString());
   var post = new Post(only(req.body, 'caption'));
   post.user = req.mongooseUser;
   post.article = req.article;

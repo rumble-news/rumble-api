@@ -37,6 +37,7 @@
     "morgan": "~1.7.0",
     "only": "0.0.2",
     "promisify-node": "0.4.0",
+    "url-trim": "^1.0.0",
     "view-helpers": "~0.1.5",
     "winston": "^2.2.0"
   },

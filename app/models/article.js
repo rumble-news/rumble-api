@@ -13,6 +13,11 @@ const embedly = require('embedly');
 const util = require('util');
 const config = require('../../config');
 const only = require('only');
+const urlTrim = require('url-trim');
+const winston = require('winston');
+
+//TODO: Add URLs that require query params here
+var specialUrls = ['https://www.youtube.com/*']
 
 // const Imager = require('imager');
 // const config = require('../../config');
@@ -118,33 +123,58 @@ ArticleSchema.statics = {
       .exec();
   },
 
+  findOrCreate: function(url) {
+    var re = new RegExp(specialUrls.join("|"), "i");
+    var self = this;
+    winston.debug("Original url: %s", url);
+    if (url.match(re) == null) {
+      url = urlTrim(url);
+      winston.debug("Trimmed url: %s", url);
+    }
+    this.findOne({url: url}).exec().then(function(article) {
+      if (typeof article !== "undefined" && article !== null) {
+        return new Promise(function(resolve, reject) {
+          winston.debug("Article found: ", article);
+          return resolve(article);
+        });
+      } else {
+        return self.parseArticle.then(function(article) {
+          var article = new ArticleSchema(objs[0]);
+          winston.debug("Article created: ", article);
+          return article.uploadAndSave();
+        }).catch(function(err) {
+            return new Promise(function(err) {return reject(err);});
+        });
+      }
+    }).catch(function(err) {
+        return new Promise(function(err) {return reject(err);});
+    });
+  },
+
+  trimUrl: function(url) {
+    var re = new RegExp(specialUrls.join("|"), "i");
+    winston.debug("Original url: %s", url);
+    if (url.match(re) == null) {
+      url = urlTrim(url);
+      winston.debug("Trimmed url: %s", url);
+    }
+    return url;
+  },
+
   parseArticle: function(url) {
     const api = new embedly({key: config.embedly.apiKey});
-    console.log(url);
     return new Promise(function(resolve, reject) {
       api.oembed({url: url}, function(err, objs) {
         if (!!err) {
-          console.log("Article parse error.");
-          console.log(err);
+          winston.error("Article parse error:", {error: err});
           return reject(err);
         } else {
-          console.log("Article parse success!");
-          console.log(objs[0]);
+          winston.debug("Article parse success!", objs[0]);
           if (objs[0].type == 'error') return reject(objs[0].error_message);
           resolve(objs);
         }
       });
     });
-    // api.oembed({url: this.url}, function(err, objs) {
-    // if (!!err) {
-    //   console.error('request #1 failed');
-    //   console.error(err.stack, objs);
-    //   return;
-    // }
-    // console.log('---------------------------------------------------------');
-    // console.log('1. ');
-    // console.log(util.inspect(objs[0]));
-  // });
   }
 };
 

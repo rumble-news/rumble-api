@@ -103,11 +103,12 @@ UserSchema.statics = {
    */
 
   list: function (options) {
+    winston.debug("In User.List", {options: options});
     const criteria = options.criteria || {};
     const page = options.page || 0;
     const limit = options.limit || 30;
     return this.find(criteria)
-      .sort({ createdAt: -1 })
+      .sort({ lastName: -1 })
       .limit(limit)
       .skip(limit * page)
       .exec();

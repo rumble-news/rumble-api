@@ -132,8 +132,6 @@ PostSchema.methods.createActivity = function() {
       if (this.activityTime()) {
           activity.time = this.activityTime();
       }
-      console.log("IN CREATE ACTIVITY");
-      console.log(activity);
       return activity;
   }
 

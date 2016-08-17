@@ -29,6 +29,7 @@ module.exports = function (app) {
   app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit);
   app.put('/users/current', stormpath.apiAuthenticationRequired, users.update);
   app.param('userId', users.load);
+  app.get('/users', stormpath.apiAuthenticationRequired, users.index);
   app.put('/users/:userId/follow', stormpath.apiAuthenticationRequired, users.follow);
   app.put('/users/:userId/unfollow', stormpath.apiAuthenticationRequired, users.unfollow);
   app.get('/users/:userId/followers', stormpath.apiAuthenticationRequired, users.followers);

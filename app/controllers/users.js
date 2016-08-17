@@ -64,25 +64,30 @@ exports.load = async(function* (req, res, next, id) {
  * List
  */
 
-// exports.index = async(function* (req, res) {
-//   console.log(req.user.username)
-//   const page = (req.query.page > 0 ? req.query.page : 1) - 1;
-//   const limit = 30;
-//   const options = {
-//     limit: limit,
-//     page: page
-//   };
-//
-//   const articles = yield Article.list(options);
-//   const count = yield Article.count();
-//
-//   respond(res, {
-//     title: 'Articles',
-//     articles: articles,
-//     page: page + 1,
-//     pages: Math.ceil(count / limit)
-//   });
-// });
+  exports.index = async(function* (req, res) {
+    const page = (req.query.page > 0 ? req.query.page : 1) - 1;
+    const limit = 30;
+    const criteria = req.query.q;
+    const options = {
+      limit: limit,
+      page: page,
+      criteria: criteria
+    };
+    winston.debug({options: options});
+    try {
+      const users = yield User.list(options);
+      const count = yield User.find(criteria).count();
+      respond(res, {
+        count: count,
+        page: page + 1,
+        pages: Math.ceil(count / limit),
+        users: users
+      });
+    } catch (err) {
+      winston.error(err);
+      respond(res, {errors: [err.toString()]}, 500)
+    }
+  });
 
 // Registration handled by Stormpath
 
