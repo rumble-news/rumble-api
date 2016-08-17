@@ -260,7 +260,45 @@ exports.feed = function (req, res){
 var enrichAggregatedActivities = function (body) {
     var activities = body.results;
     return StreamBackend.enrichAggregatedActivities(activities);
-}
+};
+
+var consolidateFeed = function(feed) {
+  //Note: this strips out all activities that are not posts
+  var newFeed = [];
+  winston.debug("Length of feed is ", feed.length);
+  for (var i = 0; i < feed.length; i++) {
+    console.log(i);
+    var activityGroup = feed[i];
+    if (activityGroup.verb == "Post") {
+      var article = activityGroup.activities[0].target;
+      var posts = [];
+      for (var j = 0; j < activityGroup.activities.length; j++) {
+        var activity = activityGroup.activities[j];
+        var post = {
+          caption: activity.object.caption,
+          id: activity.object.id,
+          created_at: activity.object.createdAt,
+          user: {
+            id: activity.actor.id,
+            givenName: activity.actor.givenName,
+            surname: activity.actor.surname
+          }
+        };
+        posts.push(post);
+      }
+      var newActivityGroup = {
+        activity_count: activityGroup.activity_count,
+        group: activityGroup.group,
+        created_at: activityGroup.created_at,
+        updated_at: activityGroup.updated_at,
+        article: article,
+        posts: posts
+      };
+      newFeed.push(newActivityGroup);
+    }
+  }
+  return newFeed;
+};
 
 exports.timeline_feed = function(req, res) {
     var aggregatedFeed = FeedManager.getNewsFeeds(req.mongooseUser._id)['timeline'];
@@ -268,7 +306,8 @@ exports.timeline_feed = function(req, res) {
     aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
         .then(enrichAggregatedActivities)
         .then(function(enrichedActivities) {
-            respond(res, {location: 'aggregated_feed', user: req.user, activities: enrichedActivities, path: req.url});
+          var feed = consolidateFeed(enrichedActivities);
+          respond(res, {user: req.user, feed: feed, path: req.url});
         })
         .catch(function (err) {
           console.log(err);
