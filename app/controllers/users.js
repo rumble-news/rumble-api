@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Follow = mongoose.model('Follow');
 const winston = require('winston');
+const Post = mongoose.model('Post');
 
 
 /**
@@ -85,7 +86,7 @@ exports.load = async(function* (req, res, next, id) {
       });
     } catch (err) {
       winston.error(err);
-      respond(res, {errors: [err.toString()]}, 500)
+      respond(res, {errors: [err.toString()]}, 500);
     }
   });
 
@@ -236,22 +237,46 @@ exports.unfollow = async(function* (req, res) {
  * Feed
  */
 
-exports.feed = function (req, res){
-  var flatFeed = stream.FeedManager.getUserFeed(req.mongooseUser._id);
-  flatFeed.get({})
-        .then(function (body) {
-            console.log(body);
-            var activities = body.results;
-            return StreamBackend.enrichActivities(activities);
-        })
-        .then(function (enrichedActivities) {
-            console.log(enrichedActivities);
-            respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
-        })
-        .catch(function (err) {
-          console.log(err);
-        });
-};
+exports.feed = async(function*(req, res){
+  var criteria = {user: req.mongooseUser};
+  try {
+    const posts = yield Post.find(criteria)
+                            .sort('-createdAt')
+                            .populate('article')
+                            .populate({ path: 'children',
+                                        populate: {
+                                          path: 'user',
+                                          select: 'givenName surname _id'
+                                        }
+                                      });
+    posts.map
+    const count = yield Post.find(criteria).count();
+    //TODO: Paginate results
+    respond(res, {
+      count: count,
+      // page: page + 1,
+      // pages: Math.ceil(count / limit),
+      posts: posts
+    });
+  } catch (err) {
+    winston.error(err);
+    respond(res, {errors: [err.toString()]}, 500);
+  }
+  // var flatFeed = stream.FeedManager.getUserFeed(req.mongooseUser._id);
+  // flatFeed.get({})
+  //       .then(function (body) {
+  //           console.log(body);
+  //           var activities = body.results;
+  //           return StreamBackend.enrichActivities(activities);
+  //       })
+  //       .then(function (enrichedActivities) {
+  //           console.log(enrichedActivities);
+  //           respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
+  //       })
+  //       .catch(function (err) {
+  //         console.log(err);
+  //       });
+});
 
 /******************
   Aggregated Feed
@@ -267,7 +292,6 @@ var consolidateFeed = function(feed) {
   var newFeed = [];
   winston.debug("Length of feed is ", feed.length);
   for (var i = 0; i < feed.length; i++) {
-    console.log(i);
     var activityGroup = feed[i];
     if (activityGroup.verb == "Post") {
       var article = activityGroup.activities[0].target;

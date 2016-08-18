@@ -111,14 +111,18 @@ exports.create = async(function* (req, res) {
   // if (typeof req.body.caption !== "undefined" && req.body.caption !== null) post.caption = req.body.caption;
   // assign(post, only(req.body, 'caption'));
   try {
-    post.parents = yield Post.getParents(post.user, post.article);
+    var parents = yield Post.getParents(post.user, post.article);
+    post.parents = parents;
     // yield post.adjustRumbleScores(req.user.fullName);
-    yield post.parents.map(function(userId) {
-      return User.findById(userId).then(function(user) {
-        return user.incrementRumbleScore(req.user.fullName + " rumbled your post.")
-      });
+    yield parents.map(function(currentPost) {
+      return currentPost.user.incrementRumbleScore(req.user.fullName + " rumbled your post.")
     });
     yield post.uploadAndSave();
+    yield parents.map(function(currentPost) {
+      console.log(currentPost);
+      currentPost.children.push(post);
+      return currentPost.save();
+    });
     res.status(200).send({
       post
     })

@@ -34,7 +34,7 @@ UserSchema.methods = {
   },
 
   incrementRumbleScore: function(event, amount = 1) {
-    console.log("Incrementing rumble score for user " + this.givenName + " " + this.surname);
+    winston.info("Incrementing rumble score for user " + this.givenName + " " + this.surname);
     this.rumbleScore += amount;
     this.scoreHistory.push({event, amount});
     return this.save();

@@ -10,6 +10,8 @@ const FeedManager = stream.FeedManager;
 const StreamMongoose = stream.mongoose;
 const Follow = mongoose.model('Follow');
 const Promise = require("bluebird");
+const winston = require('winston');
+
 
 
 // const Imager = require('imager');
@@ -27,9 +29,14 @@ var PostSchema = new Schema({
   user: { type : Schema.ObjectId, ref : 'User', required: true },
   caption: { type : String, default : '' },
   createdAt: { type : Date, default : Date.now },
-  // Note: parents refers to the parent users, i.e. everyone this post's
-  // is following who has already posted this article
-  parents: {type: [Schema.ObjectId]}
+  // Note: parents refers to the parents of this post, i.e. all posts by people
+  // this user is following that came happened before this post and reference
+  // the same article
+  parents: {type: [Schema.ObjectId]},
+  // Note: parents refers to the children of this post, i.e. all posts by people
+  // who follow this user that happened after this post and reference
+  // the same article
+  children: {type: [Schema.ObjectId]}
 });
 
 
@@ -95,21 +102,22 @@ PostSchema.statics = {
     var self = this;
     var getFollowing = Follow.find({user: user}).exec();
     return getFollowing.then(function(following) {
-      console.log("Get following success");
-      console.log(following);
+      winston.debug("Get following success");
       return Promise.map(following, function(follow) {
         return follow.target;
       })
     })
     .then(function(followingUsers) {
       console.log(followingUsers);
-      return self.find().and([{article: article}, {user: {$in: followingUsers}}]).exec();
-    }).then(function(parentPosts) {
-      console.log(parentPosts);
-      return Promise.map(parentPosts, function(post) {
-        return post.user;
-      })
+      return self.find().and([{article: article}, {user: {$in: followingUsers}}]).populate('user').exec();
     });
+
+    // .then(function(parentPosts) {
+    //   console.log(parentPosts);
+    //   return Promise.map(parentPosts, function(post) {
+    //     return post.user;
+    //   })
+    // });
   }
 
 };
