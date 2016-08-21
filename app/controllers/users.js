@@ -41,11 +41,15 @@ exports.loadCurrentUser = function (req, res, next) {
  * Load
  */
 exports.load = async(function* (req, res, next, id) {
-  try {
-    req.profile = yield User.load(id);
-    if (!req.profile) return next(new Error('User not found'));
-  } catch (err) {
-    return next(err);
+  if (id == "me") {
+    req.profile = req.mongooseUser;
+  } else {
+    try {
+      req.profile = yield User.load(id);
+      if (!req.profile) return next(new Error('User not found'));
+    } catch (err) {
+      return next(err);
+    }
   }
   next();
 });
@@ -141,12 +145,19 @@ exports.current = function (req, res){
  * Show
  */
 
-exports.show = async(function (req, res){
-
-  respond(res, {
-    stormpathUser: req.user,
-    mongooseUser: req.mongooseUser
-  });
+exports.show = async(function* (req, res) {
+  var client = req.app.get('stormpathClient');
+  try {
+    var u = User.find();
+    var stormpathUser = yield User.findByHref(req.profile.href, client);
+    var mergedUser = Object.assign(req.profile.toObject(), stormpathUser);
+    respond(res, {
+      user: mergedUser
+    });
+  } catch (err) {
+    winston.error(err);
+    respond(res, {errors: [err.toString()]}, 500)
+  }
 });
 
 /**
@@ -254,8 +265,8 @@ exports.unfollow = async(function* (req, res) {
  * Feed
  */
 
-exports.feed = async(function*(req, res){
-  var criteria = {user: req.mongooseUser};
+exports.posts = async(function*(req, res){
+  var criteria = {user: req.profile};
   try {
     const posts = yield Post.find(criteria)
                             .sort('-createdAt')
@@ -266,14 +277,14 @@ exports.feed = async(function*(req, res){
                                           select: 'givenName surname _id'
                                         }
                                       });
-    posts.map
     const count = yield Post.find(criteria).count();
     //TODO: Paginate results
     respond(res, {
       count: count,
       // page: page + 1,
       // pages: Math.ceil(count / limit),
-      posts: posts
+      posts: posts,
+      user: req.profile
     });
   } catch (err) {
     winston.error(err);

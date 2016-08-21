@@ -111,6 +111,17 @@ UserSchema.statics = {
       .limit(limit)
       .skip(limit * page)
       .exec();
+  },
+  findByHref: function(href, client) {
+    return new Promise(function(resolve, reject) {
+      client.getAccount(href, function(err, account) {
+        if (err) {
+          return reject(err);
+        } else {
+          resolve(account);
+        }
+      });
+    });
   }
 
 };

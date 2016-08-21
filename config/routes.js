@@ -29,11 +29,13 @@ module.exports = function (app) {
   app.put('/users/me', stormpath.apiAuthenticationRequired, users.update);
   app.param('userId', users.load);
   app.get('/users', stormpath.apiAuthenticationRequired, users.index);
-  app.put('/users/:userId', stormpath.apiAuthenticationRequired, users.show);
+  app.get('/users/:userId', stormpath.apiAuthenticationRequired, users.show);
   app.put('/users/:userId/follow', stormpath.apiAuthenticationRequired, users.follow);
   app.put('/users/:userId/unfollow', stormpath.apiAuthenticationRequired, users.unfollow);
   app.get('/users/:userId/followers', stormpath.apiAuthenticationRequired, users.followers);
   app.get('/users/:userId/following', stormpath.apiAuthenticationRequired, users.following);
+  // To get feed of only one user's posts
+  app.get('/users/:userId/posts', stormpath.apiAuthenticationRequired, users.posts);
 
 
 
@@ -44,7 +46,7 @@ module.exports = function (app) {
 
   // Feed
 
-  app.get('/feed', stormpath.apiAuthenticationRequired, users.feed);
+
   app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
   app.get('/notifications', stormpath.apiAuthenticationRequired, users.notification_feed);
 
