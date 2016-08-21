@@ -317,6 +317,7 @@ var consolidateFeed = function(feed, onlyPosts=true) {
         updated_at: activityGroup.updated_at,
         article: article,
         verb: activityGroup.verb,
+        id: activityGroup.id,
         posts: posts
       };
       newFeed.push(newActivityGroup);
@@ -339,6 +340,7 @@ var consolidateFeed = function(feed, onlyPosts=true) {
         created_at: activityGroup.created_at,
         updated_at: activityGroup.updated_at,
         verb: activityGroup.verb,
+        id: activityGroup.id,
         follows: follows
       };
       newFeed.push(newActivityGroup);
@@ -350,11 +352,11 @@ var consolidateFeed = function(feed, onlyPosts=true) {
 exports.timeline_feed = function(req, res) {
     var aggregatedFeed = FeedManager.getNewsFeeds(req.mongooseUser._id)['timeline'];
     var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
-    aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
+    aggregatedFeed.get({limit: limit, id_lt: req.query.id_lt})
         .then(enrichAggregatedActivities)
         .then(function(enrichedActivities) {
           var feed = consolidateFeed(enrichedActivities);
-          respond(res, {user: req.user, feed: feed, enriched: enrichedActivities, path: req.url});
+          respond(res, {feed: feed, path: req.url});
         })
         .catch(function (err) {
           winston.error(err);
@@ -370,11 +372,11 @@ exports.timeline_feed = function(req, res) {
    winston.debug("Getting notifications for User:%s", req.mongooseUser.id);
    var aggregatedFeed = FeedManager.getNotificationFeed(req.mongooseUser._id);
    var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
-   aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
+   aggregatedFeed.get({limit: limit, id_lt: req.query.id_lt})
        .then(enrichAggregatedActivities)
        .then(function(enrichedActivities) {
           var feed = consolidateFeed(enrichedActivities, false);
-          respond(res, {feed: feed, user: req.user, path: req.url});
+          respond(res, {feed: feed, enriched: enrichedActivities});
        })
        .catch(function (err) {
          console.log(err);
