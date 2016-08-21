@@ -25,9 +25,8 @@ module.exports = function (app) {
   app.all('/*', stormpath.apiAuthenticationRequired, users.loadCurrentUser);
 
   // user routes
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.show);
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit);
-  app.put('/users/current', stormpath.apiAuthenticationRequired, users.update);
+  app.get('/users/me', stormpath.apiAuthenticationRequired, users.current);
+  app.put('/users/me', stormpath.apiAuthenticationRequired, users.update);
   app.param('userId', users.load);
   app.get('/users', stormpath.apiAuthenticationRequired, users.index);
   app.put('/users/:userId/follow', stormpath.apiAuthenticationRequired, users.follow);

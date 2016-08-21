@@ -15,7 +15,6 @@ const UserSchema = new Schema({
   surname: { type: String, default: '' },
   bio: { type: String, default: '' },
   rumbleScore: {type: Number, default: 0},
-  scoreHistory: {type: [], default: []},
   followers: {type: Number, default: 0},
   following: {type: Number, default: 0}
 });
@@ -36,7 +35,7 @@ UserSchema.methods = {
   incrementRumbleScore: function(event, amount = 1) {
     winston.info("Incrementing rumble score for user " + this.givenName + " " + this.surname);
     this.rumbleScore += amount;
-    this.scoreHistory.push({event, amount});
+    // this.scoreHistory.push({event, amount});
     return this.save();
   },
   incrementFollowers: function() {

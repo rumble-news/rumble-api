@@ -111,6 +111,11 @@ exports.create = async(function* (req, res) {
   // if (typeof req.body.caption !== "undefined" && req.body.caption !== null) post.caption = req.body.caption;
   // assign(post, only(req.body, 'caption'));
   try {
+    var existingPost = yield Post.findOne({user: req.mongooseUser, article: req.article})
+    if (existingPost) {
+      post = existingPost;
+      throw "You have already posted this article";
+    }
     var parents = yield Post.getParents(post.user, post.article);
     post.parents = parents;
     // yield post.adjustRumbleScores(req.user.fullName);
@@ -129,7 +134,6 @@ exports.create = async(function* (req, res) {
     })
   } catch (err) {
     respond(res, {
-      title: post.title || 'New Post',
       errors: [err.toString()],
       post
     }, 422);

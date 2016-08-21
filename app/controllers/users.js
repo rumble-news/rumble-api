@@ -8,6 +8,7 @@ const User = mongoose.model('User');
 const Follow = mongoose.model('Follow');
 const winston = require('winston');
 const Post = mongoose.model('Post');
+const promisify = require("promisify-node");
 
 
 /**
@@ -92,15 +93,17 @@ exports.load = async(function* (req, res, next, id) {
 
 // Registration handled by Stormpath
 
-/**
- * Edit a user
- */
-
-exports.edit = function (req, res) {
-  respond(res, {
-    user: req.user
-  });
-};
+var stormpathSave = function(user) {
+  return new Promise(function(resolve, reject) {
+    user.save(function (err) {
+      if (err) {
+        return reject(err);
+      } else {
+        resolve();
+      }
+    })
+  })
+}
 
 /**
  * Update user
@@ -109,9 +112,10 @@ exports.edit = function (req, res) {
 exports.update = async(function* (req, res){
   // const user = req.user;
   assign(req.user, only(req.body, 'username email givenName middleName surname status password'));
-  console.log(req.user);
+  assign(req.mongooseUser, only(req.body, 'givenName middleName surname status'));
   try {
-    req.user.save()
+    yield stormpathSave(req.user);
+    yield req.mongooseUser.save();
     respond(res, req.user);
   } catch (err) {
     respond(res, {
@@ -123,12 +127,24 @@ exports.update = async(function* (req, res){
 });
 
 /**
+ * Current
+ */
+
+exports.current = function (req, res){
+  respond(res, {
+    stormpathUser: req.user,
+    mongooseUser: req.mongooseUser
+  });
+};
+
+/**
  * Show
  */
 
 exports.show = function (req, res){
   respond(res, {
-    user: req.user
+    stormpathUser: req.user,
+    mongooseUser: req.mongooseUser
   });
 };
 
