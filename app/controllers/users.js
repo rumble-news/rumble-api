@@ -106,7 +106,7 @@ var stormpathSave = function(user) {
 }
 
 /**
- * Update user
+ * Update current user
  */
 
 exports.update = async(function* (req, res){
@@ -131,9 +131,9 @@ exports.update = async(function* (req, res){
  */
 
 exports.current = function (req, res){
+  var mergedUser = Object.assign(req.mongooseUser.toObject(), req.user);
   respond(res, {
-    stormpathUser: req.user,
-    mongooseUser: req.mongooseUser
+    user: mergedUser
   });
 };
 
@@ -141,12 +141,13 @@ exports.current = function (req, res){
  * Show
  */
 
-exports.show = function (req, res){
+exports.show = async(function (req, res){
+
   respond(res, {
     stormpathUser: req.user,
     mongooseUser: req.mongooseUser
   });
-};
+});
 
 /**
  * Follow
