@@ -287,7 +287,7 @@ var enrichAggregatedActivities = function (body) {
     return StreamBackend.enrichAggregatedActivities(activities);
 };
 
-var consolidateFeed = function(feed) {
+var consolidateFeed = function(feed, onlyPosts=true) {
   //Note: this strips out all activities that are not posts
   var newFeed = [];
   winston.debug("Length of feed is ", feed.length);
@@ -316,7 +316,30 @@ var consolidateFeed = function(feed) {
         created_at: activityGroup.created_at,
         updated_at: activityGroup.updated_at,
         article: article,
+        verb: activityGroup.verb,
         posts: posts
+      };
+      newFeed.push(newActivityGroup);
+    } else if (activityGroup.verb == "Follow") {
+      var follows = [];
+      for (var j = 0; j < activityGroup.activities.length; j++) {
+        var activity = activityGroup.activities[j];
+        var follow = {
+          user: {
+            id: activity.actor.id,
+            givenName: activity.actor.givenName,
+            surname: activity.actor.surname
+          }
+        };
+        follows.push(follow);
+      }
+      var newActivityGroup = {
+        activity_count: activityGroup.activity_count,
+        group: activityGroup.group,
+        created_at: activityGroup.created_at,
+        updated_at: activityGroup.updated_at,
+        verb: activityGroup.verb,
+        follows: follows
       };
       newFeed.push(newActivityGroup);
     }
@@ -331,10 +354,10 @@ exports.timeline_feed = function(req, res) {
         .then(enrichAggregatedActivities)
         .then(function(enrichedActivities) {
           var feed = consolidateFeed(enrichedActivities);
-          respond(res, {user: req.user, feed: feed, path: req.url});
+          respond(res, {user: req.user, feed: feed, enriched: enrichedActivities, path: req.url});
         })
         .catch(function (err) {
-          console.log(err);
+          winston.error(err);
           respond(res, err, 500);
         });
 };
@@ -344,15 +367,17 @@ exports.timeline_feed = function(req, res) {
  */
 
  exports.notification_feed = function(req, res) {
-     var aggregatedFeed = FeedManager.getNotificationFeed(req.mongooseUser._id);
-     var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
-     aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
-         .then(enrichAggregatedActivities)
-         .then(function(enrichedActivities) {
-             respond(res, {location: 'aggregated_feed', user: req.user, activities: enrichedActivities, path: req.url});
-         })
-         .catch(function (err) {
-           console.log(err);
-           respond(res, err, 500);
-         });
+   winston.debug("Getting notifications for User:%s", req.mongooseUser.id);
+   var aggregatedFeed = FeedManager.getNotificationFeed(req.mongooseUser._id);
+   var limit = (typeof req.query.limit !== "undefined" && req.query.limit !== null) ? req.query.limit : 10;
+   aggregatedFeed.get({limit: limit, id_lt: req.params.id_lt})
+       .then(enrichAggregatedActivities)
+       .then(function(enrichedActivities) {
+          var feed = consolidateFeed(enrichedActivities, false);
+          respond(res, {feed: feed, user: req.user, path: req.url});
+       })
+       .catch(function (err) {
+         console.log(err);
+         respond(res, err, 500);
+       });
  };

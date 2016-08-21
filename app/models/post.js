@@ -4,6 +4,8 @@
  * Module dependencies.
  */
 
+require('./models.js').initialize()
+
 const mongoose = require('mongoose');
 const stream = require('getstream-node');
 const FeedManager = stream.FeedManager;
@@ -11,6 +13,9 @@ const StreamMongoose = stream.mongoose;
 const Follow = mongoose.model('Follow');
 const Promise = require("bluebird");
 const winston = require('winston');
+const User = mongoose.model('User');
+
+
 
 
 
@@ -33,6 +38,7 @@ var PostSchema = new Schema({
   // this user is following that came happened before this post and reference
   // the same article
   parents: {type: [Schema.ObjectId]},
+  parentUsers: {type: [Schema.ObjectId]},
   // Note: parents refers to the children of this post, i.e. all posts by people
   // who follow this user that happened after this post and reference
   // the same article
@@ -111,7 +117,6 @@ PostSchema.statics = {
       console.log(followingUsers);
       return self.find().and([{article: article}, {user: {$in: followingUsers}}]).populate('user').exec();
     });
-
     // .then(function(parentPosts) {
     //   console.log(parentPosts);
     //   return Promise.map(parentPosts, function(post) {
@@ -144,8 +149,9 @@ PostSchema.methods.createActivity = function() {
   }
 
   PostSchema.methods.activityNotify = function() {
+    winston.debug("In activityNotify", {parents: this.parents});
     if (this.parents && this.parents.length > 0) {
-      return this.parents.map(function(user) {
+      return this.parentUsers.map(function(user) {
         return FeedManager.getNotificationFeed(user);
       });
     } else {

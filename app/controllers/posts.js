@@ -114,9 +114,10 @@ exports.create = async(function* (req, res) {
     var parents = yield Post.getParents(post.user, post.article);
     post.parents = parents;
     // yield post.adjustRumbleScores(req.user.fullName);
-    yield parents.map(function(currentPost) {
+    var parentUsers = yield parents.map(function(currentPost) {
       return currentPost.user.incrementRumbleScore(req.user.fullName + " rumbled your post.")
     });
+    post.parentUsers = parentUsers;
     yield post.uploadAndSave();
     yield parents.map(function(currentPost) {
       console.log(currentPost);
