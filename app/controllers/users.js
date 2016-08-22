@@ -55,18 +55,6 @@ exports.load = async(function* (req, res, next, id) {
 });
 
 /**
- * Load
- */
-// exports.load = async(function* (req, res, next) {
-//   try {
-//     if (!req.user) return next(new Error('User not found'));
-//   } catch (err) {
-//     return next(err);
-//   }
-//   next();
-// });
-
-/**
  * List
  */
 
@@ -114,8 +102,7 @@ var stormpathSave = function(user) {
  */
 
 exports.update = async(function* (req, res){
-  // const user = req.user;
-  assign(req.user, only(req.body, 'username email givenName middleName surname status password'));
+  assign(req.user, only(req.body, 'username email givenName middleName surname status password bio'));
   assign(req.mongooseUser, only(req.body, 'givenName middleName surname status'));
   try {
     yield stormpathSave(req.user);
@@ -390,7 +377,7 @@ exports.timeline_feed = function(req, res) {
        .then(enrichAggregatedActivities)
        .then(function(enrichedActivities) {
           var feed = consolidateFeed(enrichedActivities, false);
-          respond(res, {feed: feed, enriched: enrichedActivities});
+          respond(res, {feed: feed});
        })
        .catch(function (err) {
          winston.error(err);
