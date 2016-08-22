@@ -28,7 +28,7 @@ const assign = Object.assign;
 exports.loadCurrentUser = function (req, res, next) {
   User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
     if (err) {
-      console.log(err);
+      winston.error(err);
       next(new Error('User not found'));
     } else {
       req.mongooseUser = user;
@@ -290,20 +290,6 @@ exports.posts = async(function*(req, res){
     winston.error(err);
     respond(res, {errors: [err.toString()]}, 500);
   }
-  // var flatFeed = stream.FeedManager.getUserFeed(req.mongooseUser._id);
-  // flatFeed.get({})
-  //       .then(function (body) {
-  //           console.log(body);
-  //           var activities = body.results;
-  //           return StreamBackend.enrichActivities(activities);
-  //       })
-  //       .then(function (enrichedActivities) {
-  //           console.log(enrichedActivities);
-  //           respond(res, {location: 'feed', user: req.user, activities: enrichedActivities, path: req.url});
-  //       })
-  //       .catch(function (err) {
-  //         console.log(err);
-  //       });
 });
 
 /******************
@@ -407,7 +393,7 @@ exports.timeline_feed = function(req, res) {
           respond(res, {feed: feed, enriched: enrichedActivities});
        })
        .catch(function (err) {
-         console.log(err);
+         winston.error(err);
          respond(res, err, 500);
        });
  };

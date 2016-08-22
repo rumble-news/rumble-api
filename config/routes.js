@@ -54,11 +54,11 @@ module.exports = function (app) {
   app.param('articleId', articles.load);
   app.get('/articles', stormpath.apiAuthenticationRequired, articles.index);
   // app.get('/articles/new', articles.new);
-  app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
+  // app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
   app.get('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.show);
   // app.get('/articles/:id/edit', articles.edit);
   app.put('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.update);
-  app.delete('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.destroy);
+  // app.delete('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.destroy);
 
   // post routes
   app.param('postId', posts.load);

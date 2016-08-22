@@ -100,7 +100,6 @@ ArticleSchema.statics = {
    */
 
   load: function (_id) {
-    console.log("Loading article");
     return this.findOne({ _id })
       .exec();
   },

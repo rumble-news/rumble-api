@@ -11,6 +11,7 @@ const { respond } = require('../utils');
 const Article = mongoose.model('Article');
 const User = mongoose.model('User');
 const assign = Object.assign;
+const winston = require('winston');
 
 /**
  * Load
@@ -30,7 +31,6 @@ exports.load = async(function* (req, res, next, id) {
  */
 
 exports.index = async(function* (req, res) {
-  console.log(req.user.username)
   const page = (req.query.page > 0 ? req.query.page : 1) - 1;
   const limit = 30;
   const options = {
@@ -49,80 +49,20 @@ exports.index = async(function* (req, res) {
   });
 });
 
-/**
- * New article
- */
-
-exports.new = function (req, res){
-  res.status(200).send( {
-    title: 'New Article',
-    article: new Article()
-  });
-};
-
-/**
- * Create an article
- * Upload an image
- */
-
-exports.create = function (req, res) {
-  console.log(req.body)
-  var article = new Article(only(req.body, 'title url imageURL'));
-  // const user = User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname})
-  User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
-    if (err) {
-      console.log(err);
-    } else {
-      article.user = user;
-      try {
-        article.uploadAndSave();
-        res.status(200).send({
-          article
-        })
-      } catch (err) {
-        respond(res, {
-          title: article.title || 'New Article',
-          errors: [err.toString()],
-          article
-        }, 422);
-      }
-    }
-    // created will be true here
-    console.log('A new user from "%s" was inserted', user.href);
-  });
-  // article.userHref = req.user.href;
-  // article.username = req.user.username;
-  // const userId = req.user.href.split('/').pop()
-
-  // console.log(article);
-  // activity = article.createActivity();
-  // console.log(activity);
-};
-
-/**
- * Edit an article
- */
-
-exports.edit = function (req, res) {
-  respond(res, {
-    title: 'Edit ' + req.article.title,
-    article: req.article
-  });
-};
 
 /**
  * Update article
  */
 
 exports.update = async(function* (req, res){
-  const article = req.article;
-  assign(article, only(req.body, 'title url imageURL'));
+  var article = req.article;
+  assign(article, only(req.body, 'provider_name description thumbnail_url provider_url url author_name title'));
+  winston.debug("Article is: ", article.toString());
   try {
-    yield article.uploadAndSave(req.file);
+    yield article.save();
     respond(res, article);
   } catch (err) {
     respond(res, {
-      title: 'Edit ' + article.title,
       errors: [err.toString()],
       article
     }, 422);
@@ -134,30 +74,13 @@ exports.update = async(function* (req, res){
  */
 
 exports.show = function (req, res){
-  var client = req.app.get('stormpathClient');
-  client.getAccount(req.user.href, function(err, account) {
-    console.log(account);
-    if (err) {
-      respond(res, {
-        title: req.article.title,
-        article: req.article,
-        user: 'unknown'
-      });
-    } else {
-      respond(res, {
-        title: req.article.title,
-        article: req.article,
-        user: account
-      });
-    }
-  });
-
+  respond(res, req.article);
 };
 
 /**
  * Delete an article
  */
-
+//TODO: If you end up using this route, you need to also destry all associated posts
 exports.destroy = async(function* (req, res) {
   yield req.article.remove();
   respond({ req, res }, {

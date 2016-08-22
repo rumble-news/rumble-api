@@ -80,7 +80,7 @@ PostSchema.statics = {
    */
 
   load: function (_id) {
-    console.log("Loading post");
+    winston.debug("Loading post");
     return this.findOne({ _id })
       .exec();
   },
@@ -103,8 +103,6 @@ PostSchema.statics = {
       .exec();
   },
   getParents: function(user, article) {
-    // console.log(this);
-    // debugger;
     var self = this;
     var getFollowing = Follow.find({user: user}).exec();
     return getFollowing.then(function(following) {
@@ -114,15 +112,8 @@ PostSchema.statics = {
       })
     })
     .then(function(followingUsers) {
-      console.log(followingUsers);
       return self.find().and([{article: article}, {user: {$in: followingUsers}}]).populate('user').exec();
     });
-    // .then(function(parentPosts) {
-    //   console.log(parentPosts);
-    //   return Promise.map(parentPosts, function(post) {
-    //     return post.user;
-    //   })
-    // });
   }
 
 };
@@ -135,7 +126,6 @@ PostSchema.methods.createActivity = function() {
       for (var key in extra_data) {
           activity[key] = extra_data[key];
       }
-      console.log(this.activityNotify());
       activity.to = (this.activityNotify() || []).map(function(x){return x.id});
       activity.actor = this.activityActor();
       activity.verb = this.activityVerb();

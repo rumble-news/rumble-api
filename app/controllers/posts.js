@@ -89,11 +89,10 @@ exports.getArticle = async(function* (req, res, next) {
     }
   } else if (typeof req.body.articleId !== "undefined" && req.body.articleId !== null)  {
     Article.load(req.body.articleId).then(function(article) {
-      console.log(article);
       req.article = article;
       next();
     }).catch (function(err) {
-      console.log(err);
+      winston.error(err);
       var errorString = 'Could not find article ' + req.body.articleId;
       respond(res, {error: errorString}, 422);
     });
@@ -125,7 +124,6 @@ exports.create = async(function* (req, res) {
     post.parentUsers = parentUsers;
     yield post.uploadAndSave();
     yield parents.map(function(currentPost) {
-      console.log(currentPost);
       currentPost.children.push(post);
       return currentPost.save();
     });
@@ -158,8 +156,6 @@ exports.edit = function (req, res) {
 exports.update = async(function* (req, res){
   // Can only update caption
   const post = req.post;
-  console.log(req.mongooseUser);
-  console.log(post.user);
   if (post.user.equals(req.mongooseUser._id)) {
     assign(post, only(req.body, 'caption'));
     try {
@@ -218,16 +214,3 @@ exports.destroy = function (req, res) {
     }, 422);
   }
 };
-
-// exports.getParents = function(req, res) {
-//   Post.getParents(req.post.user, req.post.article)
-//     .then(function(parents) {
-//       console.log(parents);
-//     })
-//     .catch(function(err) {
-//       console.log(err);
-//     });
-//   respond(res, {
-//     parents: "none"
-//   }, 200);
-// };

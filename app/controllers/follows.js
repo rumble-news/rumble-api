@@ -20,7 +20,7 @@ var promisify = require("promisify-node");
 exports.load = function (req, res, next) {
   User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
     if (err) {
-      console.log(err);
+      winston.error(err);
       next(new Error('User not found'));
     } else {
       req.userId = user._id;

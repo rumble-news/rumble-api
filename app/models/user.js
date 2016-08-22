@@ -60,11 +60,6 @@ UserSchema.methods = {
   },
   isFollowing: function (target) {
     winston.debug("In isFollowing");
-    // return Follow.findOne({user: this, target: target}).exec();
-    // return Follow.findOne({user: this, target: target}).exec().then(function(follow) {
-    //   winston.debug("Already following", {user: this, target: target});
-    //   return !!follow;
-    // });
     var userId = this._id
     winston.debug("Checking for follow relationship", {user: this.id, target: target.id});
     return Follow.findOne({user: userId, target: target}).exec().then(function(follow) {
@@ -126,26 +121,6 @@ UserSchema.statics = {
 
 };
 
-
-// const promisify = require("promisify-node");
-// const Promise = require("bluebird");
-
-// exports.findUserByHref = function(href, client) {
-//   // Promise.promisify(client.getAccount);
-//   client.getAccount(href).then(function(account) {
-//     console.log(account);
-//     if (err != "undefined" && err != null) {
-//       return account
-//     } else {
-//       return 'unknown'
-//     }
-//   });
-// };
-
 UserSchema.plugin(findOrCreate);
-
-// UserSchema.methods.findFromHref = function(req) {
-//   User.findOrCreate({href: req.user.href}, {givenName: req.user.givenName, surname: req.user.surname}, function(err, user, created) {
-// };
 
 mongoose.model('User', UserSchema);
