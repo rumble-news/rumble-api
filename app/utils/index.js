@@ -11,3 +11,8 @@ function respond (res, obj, status) {
     }
   });
 }
+
+function hrefToId (href) {
+  const lastSlash = href.indexOf('/')
+  return href.substr(lastSlash + 1)
+}

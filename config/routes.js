@@ -7,7 +7,8 @@
 const home = require('../app/controllers/home');
 const users = require('../app/controllers/users');
 const articles = require('../app/controllers/articles');
-const comments = require('../app/controllers/comments');
+const posts = require('../app/controllers/posts');
+const follows = require('../app/controllers/follows');
 const stormpath = require('express-stormpath')
 
 
@@ -20,28 +21,52 @@ module.exports = function (app) {
 
   app.get('/', home.index);
 
+  // Find or create user id
+  app.all('/*', stormpath.apiAuthenticationRequired, users.loadCurrentUser);
+
   // user routes
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.show)
-  app.get('/users/current', stormpath.apiAuthenticationRequired, users.edit)
-  app.put('/users/current', stormpath.apiAuthenticationRequired, users.update)
+  app.get('/users/me', stormpath.apiAuthenticationRequired, users.current);
+  app.put('/users/me', stormpath.apiAuthenticationRequired, users.update);
+  app.param('userId', users.load);
+  app.get('/users', stormpath.apiAuthenticationRequired, users.index);
+  app.get('/users/:userId', stormpath.apiAuthenticationRequired, users.show);
+  app.put('/users/:userId/follow', stormpath.apiAuthenticationRequired, users.follow);
+  app.put('/users/:userId/unfollow', stormpath.apiAuthenticationRequired, users.unfollow);
+  app.get('/users/:userId/followers', stormpath.apiAuthenticationRequired, users.followers);
+  app.get('/users/:userId/following', stormpath.apiAuthenticationRequired, users.following);
+  // To get feed of only one user's posts
+  app.get('/users/:userId/posts', stormpath.apiAuthenticationRequired, users.posts);
 
 
+
+
+  // follow
+  // app.all('/follow', stormpath.apiAuthenticationRequired, follows.load);
+
+
+  // Feed
+
+
+  app.get('/timeline', stormpath.apiAuthenticationRequired, users.timeline_feed);
+  app.get('/notifications', stormpath.apiAuthenticationRequired, users.notification_feed);
 
   // article routes
-  app.param('id', articles.load);
+  app.param('articleId', articles.load);
   app.get('/articles', stormpath.apiAuthenticationRequired, articles.index);
   // app.get('/articles/new', articles.new);
-  app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
-  app.get('/articles/:id', stormpath.apiAuthenticationRequired, articles.show);
+  // app.post('/articles', stormpath.apiAuthenticationRequired, articles.create);
+  app.get('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.show);
   // app.get('/articles/:id/edit', articles.edit);
-  app.put('/articles/:id', stormpath.apiAuthenticationRequired, articles.update);
-  app.delete('/articles/:id', stormpath.apiAuthenticationRequired, articles.destroy);
+  app.put('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.update);
+  // app.delete('/articles/:articleId', stormpath.apiAuthenticationRequired, articles.destroy);
 
-  // comment routes
-  app.param('commentId', comments.load);
-  app.post('/articles/:id/comments', comments.create);
-  // app.get('/articles/:id/comments', comments.create);
-  app.delete('/articles/:id/comments/:commentId', comments.destroy);
+  // post routes
+  app.param('postId', posts.load);
+  app.post('/posts', stormpath.apiAuthenticationRequired, posts.getArticle);
+  app.post('/posts', stormpath.apiAuthenticationRequired, posts.create);
+  app.get('/posts/:postId', stormpath.apiAuthenticationRequired, posts.show);
+  app.put('/posts/:postId', stormpath.apiAuthenticationRequired, posts.update);
+  app.delete('/posts/:postId', stormpath.apiAuthenticationRequired, posts.destroy);
 
 
   /**

@@ -5,6 +5,17 @@
 
 module.exports = {
   db: 'mongodb://localhost/rumble_api_development',
+  stream: {
+    apiKey: process.env.STREAM_API_KEY,
+    apiSecret: process.env.STREAM_API_SECRET,
+    appId: '14328'
+  },
+  embedly: {
+    apiKey: process.env.EMBEDLY_API_KEY
+  },
+  winston: {
+    level: 'debug'
+  },
   facebook: {
     clientID: 'APP_ID',
     clientSecret: 'SECRET',

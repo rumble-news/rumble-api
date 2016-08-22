@@ -5,6 +5,19 @@
  */
 
 const mongoose = require('mongoose');
+const stream = require('getstream-node');
+const FeedManager = stream.FeedManager;
+const StreamMongoose = stream.mongoose;
+const promisify = require("promisify-node");
+const embedly = require('embedly');
+const util = require('util');
+const config = require('../../config');
+const only = require('only');
+const urlTrim = require('url-trim');
+const winston = require('winston');
+
+//TODO: Add URLs that require query params here
+var specialUrls = ['https://www.youtube.com/*']
 
 // const Imager = require('imager');
 // const config = require('../../config');
@@ -16,18 +29,19 @@ const Schema = mongoose.Schema;
  * Article Schema
  */
 
-const ArticleSchema = new Schema({
+var ArticleSchema = new Schema({
   title: { type : String, default : '', trim : true },
+  author_name: { type : String, default : '', trim : true },
   url: { type : String, default : '', trim : true, required: true},
-  userHref: { type : String, required: true },
-  comments: [{
-    body: { type : String, default : '' },
-    user: { type : Schema.ObjectId, ref : 'User' },
-    createdAt: { type : Date, default : Date.now }
-  }],
-  imageURL: { type : String },
-  createdAt: { type : Date, default : Date.now }
+  provider_url: { type : String, default : '', trim : true, required: true},
+  thumbnail_url: { type : String,  default : ''},
+  thumbnail_with: {type: Number},
+  thumbnail_height: {type: Number},
+  description: { type : String,  default : ''},
+  createdAt: { type : Date, default : Date.now },
+  provider_name: {type : String, detault: ''}
 });
+
 
 /**
  * Validations
@@ -66,63 +80,8 @@ ArticleSchema.methods = {
    */
 
   uploadAndSave: function () {
-    console.log(this)
     const err = this.validateSync();
     if (err && err.toString()) throw new Error(err.toString());
-    return this.save();
-
-    /*
-    if (images && !images.length) return this.save();
-    const imager = new Imager(imagerConfig, 'S3');
-
-    imager.upload(images, function (err, cdnUri, files) {
-      if (err) return cb(err);
-      if (files.length) {
-        self.image = { cdnUri : cdnUri, files : files };
-      }
-      self.save(cb);
-    }, 'article');
-    */
-  },
-    /**
-   * Add comment
-   *
-   * @param {User} user
-   * @param {Object} comment
-   * @api private
-   */
-
-  addComment: function (user, comment) {
-    this.comments.push({
-      body: comment.body,
-      user: user._id
-    });
-
-    if (!this.user.email) this.user.email = 'email@product.com';
-
-    notify.comment({
-      article: this,
-      currentUser: user,
-      comment: comment.body
-    });
-
-    return this.save();
-  },
-
-  /**
-   * Remove comment
-   *
-   * @param {commentId} String
-   * @api private
-   */
-
-  removeComment: function (commentId) {
-    const index = this.comments
-      .map(comment => comment.id)
-      .indexOf(commentId);
-
-    if (~index) this.comments.splice(index, 1);
-    else throw new Error('Comment not found');
     return this.save();
   }
 };
@@ -161,7 +120,73 @@ ArticleSchema.statics = {
       .limit(limit)
       .skip(limit * page)
       .exec();
+  },
+
+  findOrCreate: function(url) {
+    var re = new RegExp(specialUrls.join("|"), "i");
+    var self = this;
+    winston.debug("Original url: %s", url);
+    if (url.match(re) == null) {
+      url = urlTrim(url);
+      winston.debug("Trimmed url: %s", url);
+    }
+    this.findOne({url: url}).exec().then(function(article) {
+      if (typeof article !== "undefined" && article !== null) {
+        return new Promise(function(resolve, reject) {
+          winston.debug("Article found: ", article);
+          return resolve(article);
+        });
+      } else {
+        return self.parseArticle.then(function(article) {
+          var article = new ArticleSchema(objs[0]);
+          winston.debug("Article created: ", article);
+          return article.uploadAndSave();
+        }).catch(function(err) {
+            return new Promise(function(err) {return reject(err);});
+        });
+      }
+    }).catch(function(err) {
+        return new Promise(function(err) {return reject(err);});
+    });
+  },
+
+  trimUrl: function(url) {
+    var re = new RegExp(specialUrls.join("|"), "i");
+    winston.debug("Original url: %s", url);
+    if (url.match(re) == null) {
+      url = urlTrim(url);
+      winston.debug("Trimmed url: %s", url);
+    }
+    return url;
+  },
+
+  parseArticle: function(url) {
+    const api = new embedly({key: config.embedly.apiKey});
+    return new Promise(function(resolve, reject) {
+      api.oembed({url: url}, function(err, objs) {
+        if (!!err) {
+          winston.error("Article parse error:", {error: err});
+          return reject(err);
+        } else {
+          winston.debug("Article parse success!", objs[0]);
+          if (objs[0].type == 'error') return reject(objs[0].error_message);
+          resolve(objs);
+        }
+      });
+    });
   }
 };
 
+// ArticleSchema.plugin(StreamMongoose.activity);
+
+// ArticleSchema.methods.activityActorProp = function() {
+//  return 'user';
+// }
+
+// ArticleSchema.methods.activityForeignId = function() {
+//   return this.username + ':' + this.item._id;
+// };
+
 mongoose.model('Article', ArticleSchema);
+
+// stream.mongoose.setupMongoose(mongoose);
